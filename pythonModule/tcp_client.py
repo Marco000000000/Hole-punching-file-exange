@@ -50,46 +50,48 @@ def connect(local_addr, addr):
             # STOP.set()
 
 
-def main(host='127.0.0.1', port=5005):
+def main(host='localhost', port=8080):
     sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sa.connect((host, port))
-    priv_addr = sa.getsockname()
+    server_address = (host, port)
 
-    send_msg(sa, addr_to_msg(priv_addr))
-    data = recv_msg(sa)
-    logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
-    pub_addr = msg_to_addr(data)
-    send_msg(sa, addr_to_msg(pub_addr))
+    with socket.create_connection(server_address) as sa:
+        priv_addr = sa.getsockname()
 
-    data = recv_msg(sa)
-    pubdata, privdata = data.split(b'|')
-    client_pub_addr = msg_to_addr(pubdata)
-    client_priv_addr = msg_to_addr(privdata)
-    logger.info(
-        "client public is %s and private is %s, peer public is %s private is %s",
-        pub_addr, priv_addr, client_pub_addr, client_priv_addr,
-    )
+        send_msg(sa, addr_to_msg(priv_addr))
+        data = recv_msg(sa)
+        logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
+        pub_addr = msg_to_addr(data)
+        send_msg(sa, addr_to_msg(pub_addr))
 
-    threads = {
-        '0_accept': Thread(target=accept, args=(priv_addr[1],)),
-        '1_accept': Thread(target=accept, args=(client_pub_addr[1],)),
-        '2_connect': Thread(target=connect, args=(priv_addr, client_pub_addr,)),
-        '3_connect': Thread(target=connect, args=(priv_addr, client_priv_addr,)),
-    }
-    for name in sorted(threads.keys()):
-        logger.info('start thread %s', name)
-        threads[name].start()
+        data = recv_msg(sa)
+        pubdata, privdata = data.split(b'|')
+        client_pub_addr = msg_to_addr(pubdata)
+        client_priv_addr = msg_to_addr(privdata)
+        logger.info(
+            "client public is %s and private is %s, peer public is %s private is %s",
+            pub_addr, priv_addr, client_pub_addr, client_priv_addr,
+        )
 
-    while threads:
-        keys = list(threads.keys())
-        for name in keys:
-            try:
-                threads[name].join(1)
-            except TimeoutError:
-                continue
-            if not threads[name].is_alive():
-                threads.pop(name)
+        threads = {
+            '0_accept': Thread(target=accept, args=(priv_addr[1],)),
+            '1_accept': Thread(target=accept, args=(client_pub_addr[1],)),
+            '2_connect': Thread(target=connect, args=(priv_addr, client_pub_addr,)),
+            '3_connect': Thread(target=connect, args=(priv_addr, client_priv_addr,)),
+        }
+        for name in sorted(threads.keys()):
+            logger.info('start thread %s', name)
+            threads[name].start()
+
+        while threads:
+            keys = list(threads.keys())
+            for name in keys:
+                try:
+                    threads[name].join(1)
+                except TimeoutError:
+                    continue
+                if not threads[name].is_alive():
+                    threads.pop(name)
 
 
 if __name__ == '__main__':

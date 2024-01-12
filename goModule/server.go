@@ -33,17 +33,9 @@ func sendMsg(conn net.Conn, data []byte) {
 }
 
 func main() {
-	host := "127.0.0.1"
-	port := "5005"
-	fmt.Print("starting server")
+	fmt.Println("starting server")
 
-	addr, err := net.ResolveTCPAddr("tcp", host+":"+port)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(addr)
-	listener, err := net.ListenTCP("tcp", addr)
-	fmt.Println(listener)
+	listener, err := net.Listen("tcp", ":8080")
 
 	if err != nil {
 		log.Fatal(err)
@@ -58,7 +50,7 @@ func main() {
 			log.Println(err)
 			continue
 		}
-		
+
 		fmt.Printf(conn.LocalAddr().Network())
 		go handleConnection(conn)
 	}
