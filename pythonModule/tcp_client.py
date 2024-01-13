@@ -67,23 +67,27 @@ def connect(local_addr, addr):
         
 
 
-def main(host='localhost', port=8080):
+def main(host="127.0.0.1", port=5000):
     sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     httpPort="80"
     print("http://"+host+":"+httpPort+"/holePunch/1")
     firstCall=requests.get("http://"+host+":"+httpPort+"/holePunch/1")
     print(firstCall.text)
-    sa.connect((host, port))
+    print(port)
+    sa.connect(("127.0.0.1", port))
     priv_addr = sa.getsockname()
     
     send_msg(sa, addr_to_msg(priv_addr))
     data = recv_msg(sa)
+    print(data.decode("utf-8"))
     logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
     pub_addr = msg_to_addr(data)
     send_msg(sa, addr_to_msg(pub_addr))
 
     data = recv_msg(sa)
+    print(data)
+
     pubdata, privdata = data.split(b'|')
     client_pub_addr = msg_to_addr(pubdata)
     client_priv_addr = msg_to_addr(privdata)
@@ -116,4 +120,4 @@ def main(host='localhost', port=8080):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, message='%(asctime)s %(message)s')
-    main(*addr_from_args(sys.argv))
+    main()

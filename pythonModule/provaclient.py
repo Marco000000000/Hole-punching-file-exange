@@ -1,45 +1,33 @@
 import socket
-import threading
-
-def receive_messages(sock):
-    while True:
-        data = sock.recv(1024)
-        print(f"Received from server: {data.decode('utf-8')}")
 
 def main():
-    # Connect to the mediator server
-    mediator_address = ('localhost', 8080)
-    with socket.create_connection(mediator_address) as mediator_sock:
+    host = "127.0.0.1"
+    port = 8080
 
-    # Get local port of the client
-        local_port = mediator_sock.getsockname()[1]
-        print(f"Local port of client: {local_port}")
+    # Create a socket object
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        # Send local port to the mediator
-        mediator_sock.sendall(str(local_port).encode('utf-8'))
+    try:
+        # Connect to the server
+        client_socket.connect((host, port))
+        print(f"Connected to {host}:{port}")
 
-        # Receive external port from the mediator
-        external_port = int(mediator_sock.recv(1024).decode('utf-8'))
-        print(f"External port assigned by mediator: {external_port}")
+        # Send data to the server
+        message = "Hello from Python!"
+        client_socket.sendall(message.encode())
+        print(f"Sent: {message}")
 
-        # Close the connection to the mediator
-        mediator_sock.close()
+        # Receive data from the server
+        data = client_socket.recv(1024)
+        print(f"Received: {data.decode()}")
 
-        # Connect to the server using the external port
-        server_address = ('localhost', external_port)
-        while True:
-            try:
-                server_sock = socket.create_connection(server_address)
-                break
-            except:
-                pass
-        # Start a thread to receive messages from the server
-        threading.Thread(target=receive_messages, args=(server_sock,), daemon=True).start()
+    except Exception as e:
+        print(f"Error: {e}")
 
-        while True:
-            # Send messages to the server
-            message = input("Enter message to send: ")
-            server_sock.sendall(message.encode('utf-8'))
+    finally:
+        # Close the socket
+        client_socket.close()
+        print("Connection closed")
 
 if __name__ == "__main__":
     main()
