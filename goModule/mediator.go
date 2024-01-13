@@ -89,7 +89,7 @@ func main1(host string, port int) {
 		if dataAddr.IP.String() == addr.IP.String() && dataAddr.Port == addr.Port {
 			log.Println("client reply matches")
 			clientsMutex.Lock()
-			clients[addr.IP.String()+":"+strconv.Itoa(addr.Port)] = &Client{conn, addr, privAddr}
+			clients[keepNumbersAndDot(addr.IP.String()+":"+strconv.Itoa(addr.Port))] = &Client{conn, addr, privAddr}
 			clientsMutex.Unlock()
 		} else {
 			log.Println("client reply did not match")
@@ -128,6 +128,10 @@ func main1(host string, port int) {
 			clientsMutex.Lock()
 			delete(clients, c1.pub.IP.String())
 			delete(clients, c2.pub.IP.String())
+			for k := range clients {
+				delete(clients, k)
+			}
+
 			addressConnectedMutex.Lock()
 
 			removeFromAddressConnected(c1.pub.IP.String())
@@ -213,7 +217,7 @@ func msgToAddr(data []byte) (*net.TCPAddr, error) {
 	fmt.Println(len(ip))
 	fmt.Println(ip)
 
-	port, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+	port, err := strconv.Atoi(keepNumbersAndDot(parts[1]))
 	fmt.Println("port=", port)
 
 	if err != nil {

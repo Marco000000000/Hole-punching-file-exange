@@ -10,9 +10,15 @@ def addr_from_args(args, host='127.0.0.1', port=9999):
         host, port = host, port
     return host, port
 
+def keep_numbers_and_dot(input_str):
+    result = ''.join(char for char in input_str if char.isdigit() or char == '.')
+
+    return result
 
 def msg_to_addr(data):
     ip, port = data.decode('utf-8').strip().split(':')
+    ip=keep_numbers_and_dot(ip)
+    port=keep_numbers_and_dot(port)
     return (ip, int(port))
 
 
