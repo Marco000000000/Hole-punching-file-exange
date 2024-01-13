@@ -2,15 +2,18 @@
 import sys
 import logging
 import socket
+from threading import Thread
 from util import *
 socket.SO_REUSEPORT = socket.SO_REUSEADDR
 
+from flask import Flask, Response,request
 
 logger = logging.getLogger()
 clients = {}
+app = Flask(__name__)
+addressConnected=[]
 
-
-def main(host='127.0.0.1', port=5005):
+def main(host='localhost', port=8080):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((host, port))
@@ -20,6 +23,11 @@ def main(host='127.0.0.1', port=5005):
     while True:
         try:
             conn, addr = s.accept()
+            print("indirizzo addr[0]"+addr[0])
+            if addr[0] in addressConnected:
+                addressConnected.remove(addr[0])
+            else:
+                continue
         except socket.timeout:
             continue
 
@@ -47,9 +55,19 @@ def main(host='127.0.0.1', port=5005):
             clients.pop(addr1)
             clients.pop(addr2)
 
-    conn.close()
 
-
+@app.route("/holePunch/<path:userInfo>",methods=['GET'])
+def holePunchControl(userInfo):
+    if userInfo!= "1":
+        return "info errate"
+    else:
+        addressConnected.append(request.remote_addr)
+        return "ok"
+host=""
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
-    main(*addr_from_args(sys.argv))
+    holeThread=Thread(target=main,args=(*addr_from_args(sys.argv),))
+    holeThread.start()
+    #hostname = socket.gethostname()
+    #host=socket.gethostbyname_ex(hostname)[2][0]
+    app.run(debug=True, use_reloader=False,port=80)
