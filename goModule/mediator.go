@@ -116,11 +116,9 @@ func main1(host string, port int) {
 			c2msg := addrToMsg(c2.pub)
 			c2msg = append(c2msg, byte('|'))
 			temp2 := append(c2msg, addrToMsg(c2.priv)...)
-			log.Printf("server - send client info to: %s", c1.pub)
-			fmt.Println(string(temp1))
+			log.Printf("server - send client %s info to: %s", c1.pub, temp2)
 			sendMsg(c1.conn, temp2)
-			log.Printf("server - send client info to: %s", c2.pub)
-			fmt.Println(string(temp2))
+			log.Printf("server - send client %s info to: %s", c2.pub, temp1)
 
 			sendMsg(c2.conn, temp1)
 

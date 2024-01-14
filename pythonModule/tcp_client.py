@@ -98,7 +98,7 @@ def main(host="127.0.0.1", port=5000):
 
     threads = {
         '0_accept': Thread(target=accept, args=(priv_addr[1],)),
-        '1_accept': Thread(target=accept, args=(client_pub_addr[1],)),
+        '1_accept': Thread(target=accept, args=(pub_addr[1],)),
         '2_connect': Thread(target=connect, args=(priv_addr, client_pub_addr,)),
         '3_connect': Thread(target=connect, args=(priv_addr, client_priv_addr,)),
     }
