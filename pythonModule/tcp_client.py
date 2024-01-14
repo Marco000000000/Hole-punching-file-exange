@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import json
+import os
 import sys
 import logging
 import socket
@@ -7,9 +9,13 @@ from threading import Event, Thread
 import time
 from util import *
 import requests
-
+import base64
 socket.SO_REUSEPORT = socket.SO_REUSEADDR
-
+DOWNLOADPATH=os.getenv("downloadPath","download")
+DOWNLOADDIRECTORY=os.getenv("downloadDirectory","downloadDirectory")
+if not os.path.exists(DOWNLOADDIRECTORY):
+        # Create the directory
+        os.makedirs(DOWNLOADDIRECTORY)
 logger = logging.getLogger('client')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 STOP = Event()
@@ -27,23 +33,116 @@ def accept(port):
         try:
             conn, addr = s.accept()
             logger.info("Accept %s connected!", addr)
-            makeThing(conn,"accept")
+            makeThing(conn,"accept","server")
         except socket.timeout:
             continue
+def get_all_files_in_directory(directory_path):
+    file_names = {}
+    
+    # List all files in the directory
+    with os.scandir(directory_path) as entries:
+        for entry in entries:
+            if entry.is_file():
+                file_names[entry.name]="file"
+            else:
+                file_names[entry.name]="directory"
+    
+    return file_names
+def handleFirstMessage(s,role):#penso si possa fare una classe
+    if role == "server":
+        send_msg(s,json.dumps(get_all_files_in_directory(DOWNLOADPATH)).encode("utf-8"))
+        return "Sent first message"
+    else:
+        return(json.loads(recv_msg(s).decode("utf-8")))
+        
+def handleFileDownload(s,path,role):
+    if role == "server":
+        with open(path, 'rb') as file:
+            file_data = file.read()
+            temp={}
+            temp["chunk"]=str(base64.b64encode(file_data),"UTF-8")
+            temp["last"]=file.tell()>0
 
+            print(temp)
 
-def makeThing(s,type):
+            send_msg(s,json.dumps(temp).encode("utf-8"))
+            s.sendall(file_data)
+           
+        return "Sent File"
+    else:
+        send_msg(s,(path+"?file").encode("utf-8"))
+        print(os.path.join( DOWNLOADDIRECTORY,path.split(os.path.sep)[-1]))
+
+        with open(os.path.join( DOWNLOADDIRECTORY,path.split(os.path.sep)[-1]), 'wb') as received_file:
+            file_data=b''
+            cond=True
+            while(cond):
+                temp=json.loads(recv_msg(s).decode("utf-8"))
+                print(temp)
+
+                cond=not(temp['last'])
+                file_data=file_data+base64.b64decode(temp["chunk"])
+                received_file.write(file_data)
+                
+        return "received File"
+    
+
+def handleArchiveDownload(s,path,role):
+    if role == "server":
+        send_msg(s,json.dumps(get_all_files_in_directory(path)).encode("utf-8"))
+        return "Sent Archive"
+    else:
+        send_msg(s,(path+"?directory").encode("utf-8"))
+        return(json.loads(recv_msg(s).decode("utf-8")))
+    
+def handleDirectoryFiles(s,path,role):
+    if role == "server":
+        send_msg(s,json.dumps(get_all_files_in_directory(path)).encode("utf-8"))
+        return "Sent DirectoryFiles"
+    else:
+        send_msg(s,(path+"?directory").encode("utf-8"))
+        return(json.loads(recv_msg(s).decode("utf-8")))
+    
+
+def makeThing(s,type,role):
     if type=="connect":
         while True:
-
-            s.send("salve".encode("utf-8"))
+            variable=1
+            path="download"+os.path.sep+"tcp_server.py"
+            send_msg(s,"salve".encode("utf-8"))
             logger.info("inviato: %s","salve")
-
+            print(handleFirstMessage(s,role))
+            if variable>0:
+                if variable==1:
+                    print(handleFileDownload(s,path,"client"))
+                    return
+                elif variable == 2:
+                    return
+                elif variable == 3:
+                    print(handleDirectoryFiles(s,path,"client"))
+                    return
             time.sleep(5)
     else:
         while True:
-                msg=s.recv(1000)
-                logger.info("ricevuto: %s",msg.decode("utf-8"))
+                msg=recv_msg(s)
+                msg=msg.decode("utf-8")
+                logger.info("ricevuto: %s",msg)
+                if msg=="salve":
+                   print(handleFirstMessage(s,role)) 
+                else:
+                    msg=msg.split("?")
+                    print(msg)
+                    if len(msg)!=2:
+                        continue
+                    elif msg[1]=="file":
+                        print(handleFileDownload(s,msg[0],"server"))
+                        pass
+                    elif msg[1]=="archive":
+                        handleArchiveDownload(s,msg[0])
+                        pass
+                    elif msg[1]=="directory":
+                        handleDirectoryFiles(s,msg[0],"server")
+                        pass
 def connect(local_addr, addr):
     logger.info("connect from %s to %s", local_addr, addr)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -55,7 +154,7 @@ def connect(local_addr, addr):
             s.connect(addr)
             logger.info("connected from %s to %s success!", local_addr, addr)
 
-            makeThing(s,"connect")
+            makeThing(s,"connect","client")
             STOP.set()
         except socket.error:
             continue
