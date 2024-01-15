@@ -55,7 +55,7 @@ def handleFirstMessage(s,role):#penso si possa fare una classe
     else:
         return(json.loads(recv_msg(s).decode("utf-8")))
         
-def handleFileDownload(s,path,role):
+def handleFileDownload(s,path,role,subPath=""):
     if role == "server":
         with open(path, 'rb') as file:
             file_data = file.read()
@@ -66,18 +66,19 @@ def handleFileDownload(s,path,role):
             print(temp)
 
             send_msg(s,json.dumps(temp).encode("utf-8"))
-            s.sendall(file_data)
            
         return "Sent File"
     else:
         send_msg(s,(path+"?file").encode("utf-8"))
-        print(os.path.join( DOWNLOADDIRECTORY,path.split(os.path.sep)[-1]))
+        print(os.path.join( DOWNLOADDIRECTORY,subPath,path.split(os.path.sep)[-1]))
 
-        with open(os.path.join( DOWNLOADDIRECTORY,path.split(os.path.sep)[-1]), 'wb') as received_file:
+        with open(os.path.join( DOWNLOADDIRECTORY,subPath,path.split(os.path.sep)[-1]), 'wb') as received_file:
             file_data=b''
             cond=True
             while(cond):
-                temp=json.loads(recv_msg(s).decode("utf-8"))
+                a=recv_msg(s)
+                print(a)
+                temp=json.loads(a.decode("utf-8"))
                 print(temp)
 
                 cond=not(temp['last'])
@@ -87,13 +88,21 @@ def handleFileDownload(s,path,role):
         return "received File"
     
 
-def handleArchiveDownload(s,path,role):
-    if role == "server":
-        send_msg(s,json.dumps(get_all_files_in_directory(path)).encode("utf-8"))
-        return "Sent Archive"
-    else:
-        send_msg(s,(path+"?directory").encode("utf-8"))
-        return(json.loads(recv_msg(s).decode("utf-8")))
+def handleSincronizeDownload(s,path,role,subPath=""):
+        files=handleDirectoryFiles(s,path,role)
+        for file in files:
+            print("file:"+file)
+            print("is:"+files[file])
+            requestPath=os.path.join(path,file)
+            print("requestPath:"+requestPath)
+            print("subPath:"+subPath)
+            if files[file]=="file":
+                print(handleFileDownload(s,requestPath,role,subPath))
+            else:
+                os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
+                print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
+                s=handleSincronizeDownload(s,requestPath,role,os.path.join(subPath,file))
+        return s
     
 def handleDirectoryFiles(s,path,role):
     if role == "server":
@@ -107,8 +116,8 @@ def handleDirectoryFiles(s,path,role):
 def makeThing(s,type,role):
     if type=="connect":
         while True:
-            variable=1
-            path="download"+os.path.sep+"tcp_server.py"
+            variable=2
+            path="download"
             send_msg(s,"salve".encode("utf-8"))
             logger.info("inviato: %s","salve")
             print(handleFirstMessage(s,role))
@@ -117,6 +126,7 @@ def makeThing(s,type,role):
                     print(handleFileDownload(s,path,"client"))
                     return
                 elif variable == 2:
+                    print(handleSincronizeDownload(s,path,"client"))
                     return
                 elif variable == 3:
                     print(handleDirectoryFiles(s,path,"client"))
@@ -136,13 +146,8 @@ def makeThing(s,type,role):
                         continue
                     elif msg[1]=="file":
                         print(handleFileDownload(s,msg[0],"server"))
-                        pass
-                    elif msg[1]=="archive":
-                        handleArchiveDownload(s,msg[0])
-                        pass
                     elif msg[1]=="directory":
                         handleDirectoryFiles(s,msg[0],"server")
-                        pass
 def connect(local_addr, addr):
     logger.info("connect from %s to %s", local_addr, addr)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
