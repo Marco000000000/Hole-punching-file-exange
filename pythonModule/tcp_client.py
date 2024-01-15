@@ -171,7 +171,7 @@ def connect(local_addr, addr):
         
 
 
-def main(host="127.0.0.1", port=5000):
+def main(host="192.168.1.168", port=5000):
     sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     httpPort="80"
@@ -179,7 +179,7 @@ def main(host="127.0.0.1", port=5000):
     firstCall=requests.get("http://"+host+":"+httpPort+"/holePunch/1")
     print(firstCall.text)
     print(port)
-    sa.connect(("127.0.0.1", port))
+    sa.connect((host, port))
     priv_addr = sa.getsockname()
     
     send_msg(sa, addr_to_msg(priv_addr))

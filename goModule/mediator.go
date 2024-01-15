@@ -36,7 +36,7 @@ func removeFromAddressConnected(ip string) {
 
 func main1(host string, port int) {
 
-	listenAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", "127.0.0.1", port))
+	listenAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		log.Fatal(err)
 	}
