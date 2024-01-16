@@ -6,8 +6,28 @@ from util import *
 logger = logging.getLogger()
 addresses = []
 
+def get_local_ip():
+    try:
+        # Create a socket object
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+        # Connect to an external server (doesn't actually send any data)
+        s.connect(('8.8.8.8', 80))
+
+        # Get the local IP address
+        local_ip = s.getsockname()[0]
+
+        # Close the socket
+        s.close()
+
+        return local_ip
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+    
 def main(host='127.0.0.1', port=9999):
+   
+    print(host)
     sock = socket.socket(socket.AF_INET, # Internet
                          socket.SOCK_DGRAM) # UDP
     sock.bind((host, port))
@@ -27,4 +47,4 @@ def main(host='127.0.0.1', port=9999):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
-    main(*addr_from_args(sys.argv))
+    main()
