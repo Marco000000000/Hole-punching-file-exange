@@ -25,9 +25,9 @@ def get_local_ip():
         print(f"Error: {e}")
         return None
     
-def main(host='127.0.0.1', port=9999):
-   
-    print(host)
+def main(host='127.0.0.1', port=80):
+    host=get_local_ip()
+    print((host, port))
     sock = socket.socket(socket.AF_INET, # Internet
                          socket.SOCK_DGRAM) # UDP
     sock.bind((host, port))
