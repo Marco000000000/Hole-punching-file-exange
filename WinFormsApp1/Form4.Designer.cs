@@ -37,6 +37,7 @@
             buttonSeleziona = new Button();
             label1 = new Label();
             label2 = new Label();
+            buttonVisualizzazione1 = new Button();
             labelCodiceR = new Label();
             SuspendLayout();
             // 
@@ -68,8 +69,16 @@
             imageList1.ColorDepth = ColorDepth.Depth32Bit;
             imageList1.ImageStream = (ImageListStreamer)resources.GetObject("imageList1.ImageStream");
             imageList1.TransparentColor = Color.Transparent;
-            imageList1.Images.SetKeyName(0, "pdf.png");
+            imageList1.Images.SetKeyName(0, "file_pdf1.png");
             imageList1.Images.SetKeyName(1, "file_generic.png");
+            imageList1.Images.SetKeyName(2, "file_txt.png");
+            imageList1.Images.SetKeyName(3, "file_images.png");
+            imageList1.Images.SetKeyName(4, "file_video.png");
+            imageList1.Images.SetKeyName(5, "file_zip.png");
+            imageList1.Images.SetKeyName(6, "file_exe.png");
+            imageList1.Images.SetKeyName(7, "file_xls.png");
+            imageList1.Images.SetKeyName(8, "file_doc.png");
+            imageList1.Images.SetKeyName(9, "folder.png");
             // 
             // buttonSeleziona
             // 
@@ -79,6 +88,7 @@
             buttonSeleziona.TabIndex = 3;
             buttonSeleziona.Text = "Download";
             buttonSeleziona.UseVisualStyleBackColor = true;
+            buttonSeleziona.Click += buttonSeleziona_Click;
             // 
             // label1
             // 
@@ -92,19 +102,30 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(738, 24);
+            label2.Location = new Point(593, 31);
             label2.Name = "label2";
-            label2.Size = new Size(61, 20);
+            label2.Size = new Size(187, 20);
             label2.TabIndex = 5;
-            label2.Text = "utente=";
+            label2.Text = "Sei collegato con l'utente=";
+            // 
+            // buttonVisualizzazione1
+            // 
+            buttonVisualizzazione1.Location = new Point(284, 430);
+            buttonVisualizzazione1.Name = "buttonVisualizzazione1";
+            buttonVisualizzazione1.Size = new Size(119, 57);
+            buttonVisualizzazione1.TabIndex = 12;
+            buttonVisualizzazione1.Text = "Cambia Visualizzazione";
+            buttonVisualizzazione1.UseVisualStyleBackColor = true;
+            buttonVisualizzazione1.Click += onClickVisualizzazione;
             // 
             // labelCodiceR
             // 
             labelCodiceR.AutoSize = true;
-            labelCodiceR.Location = new Point(805, 24);
+            labelCodiceR.Location = new Point(812, 31);
+            labelCodiceR.Margin = new Padding(0);
             labelCodiceR.Name = "labelCodiceR";
             labelCodiceR.Size = new Size(0, 20);
-            labelCodiceR.TabIndex = 6;
+            labelCodiceR.TabIndex = 13;
             // 
             // Form4
             // 
@@ -112,12 +133,14 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(957, 520);
             Controls.Add(labelCodiceR);
+            Controls.Add(buttonVisualizzazione1);
             Controls.Add(label2);
             Controls.Add(label1);
             Controls.Add(buttonSeleziona);
             Controls.Add(listView2);
             Name = "Form4";
             Text = "Form4";
+            Load += Form4_Load;
             ResumeLayout(false);
             PerformLayout();
         }
@@ -127,10 +150,11 @@
         private ListView listView2;
         private ColumnHeader columnHeader1;
         private ColumnHeader columnHeader2;
-        private ImageList imageList1;
         private Button buttonSeleziona;
         private Label label1;
         private Label label2;
+        private Button buttonVisualizzazione1;
         private Label labelCodiceR;
+        private ImageList imageList1;
     }
 }

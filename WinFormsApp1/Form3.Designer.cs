@@ -42,6 +42,8 @@
             codiceRicevitore = new Label();
             textCodice = new TextBox();
             buttonRicevitore = new Button();
+            buttonVisualizzazione = new Button();
+            buttonFolder = new Button();
             SuspendLayout();
             // 
             // label1
@@ -56,6 +58,7 @@
             // listView1
             // 
             listView1.Columns.AddRange(new ColumnHeader[] { columnHeader1, columnHeader2 });
+            listView1.LargeImageList = imageList1;
             listView1.Location = new Point(145, 107);
             listView1.Name = "listView1";
             listView1.Size = new Size(734, 334);
@@ -80,8 +83,16 @@
             imageList1.ColorDepth = ColorDepth.Depth32Bit;
             imageList1.ImageStream = (ImageListStreamer)resources.GetObject("imageList1.ImageStream");
             imageList1.TransparentColor = Color.Transparent;
-            imageList1.Images.SetKeyName(0, "pdf.png");
+            imageList1.Images.SetKeyName(0, "file_pdf1.png");
             imageList1.Images.SetKeyName(1, "file_generic.png");
+            imageList1.Images.SetKeyName(2, "file_txt.png");
+            imageList1.Images.SetKeyName(3, "file_images.png");
+            imageList1.Images.SetKeyName(4, "file_video.png");
+            imageList1.Images.SetKeyName(5, "file_zip.png");
+            imageList1.Images.SetKeyName(6, "file_exe.png");
+            imageList1.Images.SetKeyName(7, "file_xls.png");
+            imageList1.Images.SetKeyName(8, "file_doc.png");
+            imageList1.Images.SetKeyName(9, "folder.png");
             // 
             // AggiungiButton
             // 
@@ -129,7 +140,6 @@
             codiceRicevitore.TabIndex = 8;
             codiceRicevitore.Text = "Inserire il codice ";
             codiceRicevitore.TextAlign = ContentAlignment.MiddleLeft;
-            
             // 
             // textCodice
             // 
@@ -148,11 +158,33 @@
             buttonRicevitore.UseVisualStyleBackColor = true;
             buttonRicevitore.Click += onClickRicevitore;
             // 
+            // buttonVisualizzazione
+            // 
+            buttonVisualizzazione.Location = new Point(418, 35);
+            buttonVisualizzazione.Name = "buttonVisualizzazione";
+            buttonVisualizzazione.Size = new Size(119, 57);
+            buttonVisualizzazione.TabIndex = 11;
+            buttonVisualizzazione.Text = "Cambia Visualizzazione";
+            buttonVisualizzazione.UseVisualStyleBackColor = true;
+            buttonVisualizzazione.Click += onClickVisualizza;
+            // 
+            // buttonFolder
+            // 
+            buttonFolder.Location = new Point(12, 371);
+            buttonFolder.Name = "buttonFolder";
+            buttonFolder.Size = new Size(108, 49);
+            buttonFolder.TabIndex = 12;
+            buttonFolder.Text = "Aggiungi Cartella";
+            buttonFolder.UseVisualStyleBackColor = true;
+            buttonFolder.Click += onClickFolder;
+            // 
             // Form3
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(978, 561);
+            Controls.Add(buttonFolder);
+            Controls.Add(buttonVisualizzazione);
             Controls.Add(buttonRicevitore);
             Controls.Add(textCodice);
             Controls.Add(codiceRicevitore);
@@ -164,6 +196,7 @@
             Controls.Add(label1);
             Name = "Form3";
             Text = "Form3";
+            FormClosing += Form3_FormClosing;
             Load += Form3_Load;
             ResumeLayout(false);
             PerformLayout();
@@ -183,5 +216,7 @@
         private Label codiceRicevitore;
         private TextBox textCodice;
         private Button buttonRicevitore;
+        private Button buttonVisualizzazione;
+        private Button buttonFolder;
     }
 }

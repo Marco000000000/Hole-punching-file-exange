@@ -28,42 +28,42 @@
         /// </summary>
         private void InitializeComponent()
         {
-            label1 = new Label();
+            labelRegistrazione = new Label();
             textPassword = new TextBox();
-            label2 = new Label();
+            labelPassword = new Label();
             textName = new TextBox();
-            label3 = new Label();
+            labelNome = new Label();
             buttonRegister = new Button();
             lblError = new Label();
             lblErrorName = new Label();
             lblErrorPassword = new Label();
             SuspendLayout();
             // 
-            // label1
+            // labelRegistrazione
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(318, 51);
-            label1.Name = "label1";
-            label1.Size = new Size(99, 20);
-            label1.TabIndex = 0;
-            label1.Text = "Registrazione";
-            label1.Click += label1_Click;
+            labelRegistrazione.AutoSize = true;
+            labelRegistrazione.Location = new Point(318, 51);
+            labelRegistrazione.Name = "labelRegistrazione";
+            labelRegistrazione.Size = new Size(99, 20);
+            labelRegistrazione.TabIndex = 0;
+            labelRegistrazione.Text = "Registrazione";
             // 
             // textPassword
             // 
             textPassword.Location = new Point(360, 218);
             textPassword.Name = "textPassword";
+            textPassword.PasswordChar = '*';
             textPassword.Size = new Size(125, 27);
             textPassword.TabIndex = 9;
             // 
-            // label2
+            // labelPassword
             // 
-            label2.AutoSize = true;
-            label2.Location = new Point(262, 218);
-            label2.Name = "label2";
-            label2.Size = new Size(70, 20);
-            label2.TabIndex = 8;
-            label2.Text = "Password";
+            labelPassword.AutoSize = true;
+            labelPassword.Location = new Point(262, 218);
+            labelPassword.Name = "labelPassword";
+            labelPassword.Size = new Size(70, 20);
+            labelPassword.TabIndex = 8;
+            labelPassword.Text = "Password";
             // 
             // textName
             // 
@@ -71,15 +71,16 @@
             textName.Name = "textName";
             textName.Size = new Size(125, 27);
             textName.TabIndex = 7;
+            textName.TextChanged += textName_TextChanged;
             // 
-            // label3
+            // labelNome
             // 
-            label3.AutoSize = true;
-            label3.Location = new Point(262, 128);
-            label3.Name = "label3";
-            label3.Size = new Size(50, 20);
-            label3.TabIndex = 6;
-            label3.Text = "Nome";
+            labelNome.AutoSize = true;
+            labelNome.Location = new Point(262, 128);
+            labelNome.Name = "labelNome";
+            labelNome.Size = new Size(50, 20);
+            labelNome.TabIndex = 6;
+            labelNome.Text = "Nome";
             // 
             // buttonRegister
             // 
@@ -100,7 +101,6 @@
             lblError.Name = "lblError";
             lblError.Size = new Size(0, 20);
             lblError.TabIndex = 11;
-            lblError.Click += label4_Click;
             // 
             // lblErrorName
             // 
@@ -117,9 +117,9 @@
             lblErrorPassword.ForeColor = Color.Red;
             lblErrorPassword.Location = new Point(360, 268);
             lblErrorPassword.Name = "lblErrorPassword";
-            lblErrorPassword.Size = new Size(37, 20);
+            lblErrorPassword.Size = new Size(116, 20);
             lblErrorPassword.TabIndex = 13;
-            lblErrorPassword.Text = "ciao";
+            lblErrorPassword.Text = " label per errore";
             // 
             // Form2
             // 
@@ -131,10 +131,10 @@
             Controls.Add(lblError);
             Controls.Add(buttonRegister);
             Controls.Add(textPassword);
-            Controls.Add(label2);
+            Controls.Add(labelPassword);
             Controls.Add(textName);
-            Controls.Add(label3);
-            Controls.Add(label1);
+            Controls.Add(labelNome);
+            Controls.Add(labelRegistrazione);
             Name = "Form2";
             Text = "Form2";
             Load += Form2_Load;
@@ -144,11 +144,11 @@
 
         #endregion
 
-        private Label label1;
+        private Label labelRegistrazione;
         private TextBox textPassword;
-        private Label label2;
+        private Label labelPassword;
         private TextBox textName;
-        private Label label3;
+        private Label labelNome;
         private Button buttonRegister;
         private Label lblError;
         private Label lblErrorName;

@@ -1,10 +1,9 @@
-C:\Users\giuse\Downloads\immagini\file_generic.png
-C:\Users\giuse\Downloads\immagini\file_generic.png
-D:\uni\secondo anno\Secondo Anno\Cognitive Computing and Artificial Intelligence\Domande COGNITIVE 2021 Sessione Estiva.pdf
-C:\Users\giuse\Downloads\immagini\file_generic.png
-D:\uni\primo anno\°Digital Forensics\aperte_def.pdf
-D:\uni\primo anno\°Digital Forensics\multiple_definitive.docx
-D:\uni\primo anno\°Digital Forensics\aperte_def.pdf
+C:\Users\giuse\OneDrive\Immagini\WhatsApp Image 2017-02-06 at 19.11.11.jpeg
+D:\uni\primo anno\°Digital Forensics\aperte.pdf
 D:\uni\primo anno\°Digital Forensics\digital.docx
-D:\uni\primo anno\°Digital Forensics\aperte_def.pdf
-D:\uni\primo anno\°Digital Forensics\multiple_definitive.docx
+D:\uni\primo anno\°Digital Forensics\slide digital\Crimini informatici.pdf
+D:\uni\primo anno\°Digital Forensics\slide digital\Relazioni tecniche esempi.rar
+D:\uni\primo anno\°Digital Forensics\digital.docx
+C:\Users\giuse\source\repos\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.exe
+C:\Users\giuse\source\repos\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.deps.json
+C:\Users\giuse\source\repos\WinFormsApp1\bin\Debug\net8.0-windows\prova.txt

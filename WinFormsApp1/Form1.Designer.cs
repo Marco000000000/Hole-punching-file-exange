@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             btnClickThis = new Button();
-            lblHelloWorld = new Label();
+            lblError = new Label();
             label1 = new Label();
             textName = new TextBox();
             label2 = new Label();
@@ -48,16 +48,15 @@
             btnClickThis.TabIndex = 0;
             btnClickThis.Text = "Ok";
             btnClickThis.UseVisualStyleBackColor = false;
-            btnClickThis.Click += Button1_Click;
+            btnClickThis.Click += onClickLogin;
             // 
-            // lblHelloWorld
+            // lblError
             // 
-            lblHelloWorld.AutoSize = true;
-            lblHelloWorld.Location = new Point(321, 167);
-            lblHelloWorld.Name = "lblHelloWorld";
-            lblHelloWorld.Size = new Size(0, 20);
-            lblHelloWorld.TabIndex = 1;
-            lblHelloWorld.Click += Label1_Click;
+            lblError.AutoSize = true;
+            lblError.Location = new Point(278, 170);
+            lblError.Name = "lblError";
+            lblError.Size = new Size(0, 20);
+            lblError.TabIndex = 1;
             // 
             // label1
             // 
@@ -74,7 +73,6 @@
             textName.Name = "textName";
             textName.Size = new Size(125, 27);
             textName.TabIndex = 3;
-            textName.TextChanged += textName_TextChanged;
             // 
             // label2
             // 
@@ -84,15 +82,14 @@
             label2.Size = new Size(70, 20);
             label2.TabIndex = 4;
             label2.Text = "Password";
-            label2.Click += Label1_Click;
             // 
             // textPassword
             // 
             textPassword.Location = new Point(133, 202);
             textPassword.Name = "textPassword";
+            textPassword.PasswordChar = '*';
             textPassword.Size = new Size(125, 27);
             textPassword.TabIndex = 5;
-            textPassword.TextChanged += TextBox1_TextChanged_1;
             // 
             // label3
             // 
@@ -106,15 +103,15 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(526, 137);
+            label4.Location = new Point(567, 137);
             label4.Name = "label4";
-            label4.Size = new Size(197, 20);
+            label4.Size = new Size(199, 20);
             label4.TabIndex = 7;
-            label4.Text = "se vuoi registrati clicca sotto";
+            label4.Text = "Se vuoi registrati clicca sotto";
             // 
             // button1
             // 
-            button1.Location = new Point(608, 210);
+            button1.Location = new Point(626, 202);
             button1.Name = "button1";
             button1.Size = new Size(94, 29);
             button1.TabIndex = 8;
@@ -134,7 +131,7 @@
             Controls.Add(label2);
             Controls.Add(textName);
             Controls.Add(label1);
-            Controls.Add(lblHelloWorld);
+            Controls.Add(lblError);
             Controls.Add(btnClickThis);
             Name = "Form1";
             Text = "Form1";
@@ -146,7 +143,7 @@
         #endregion
 
         private Button btnClickThis;
-        private Label lblHelloWorld;
+        private Label lblError;
         private Label label1;
         private TextBox textName;
         private Label label2;
