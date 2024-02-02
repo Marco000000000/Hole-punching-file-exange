@@ -105,9 +105,9 @@
             label4.AutoSize = true;
             label4.Location = new Point(567, 137);
             label4.Name = "label4";
-            label4.Size = new Size(199, 20);
+            label4.Size = new Size(204, 20);
             label4.TabIndex = 7;
-            label4.Text = "Se vuoi registrati clicca sotto";
+            label4.Text = "Se vuoi registrarti clicca sotto";
             // 
             // button1
             // 
@@ -133,6 +133,7 @@
             Controls.Add(label1);
             Controls.Add(lblError);
             Controls.Add(btnClickThis);
+            MaximizeBox = false;
             Name = "Form1";
             Text = "Form1";
             Load += Form1_Load;

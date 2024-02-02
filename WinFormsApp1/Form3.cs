@@ -10,18 +10,19 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft.VisualBasic.ApplicationServices;
 using MySql.Data.MySqlClient;
+using static System.Windows.Forms.LinkLabel;
 
 namespace WinFormsApp1
 {
     public partial class Form3 : Form
     {
         string numero;
+        
         MySqlConnection Conn;
         string sqlQuerry;
-        DataTable dt;
-
-        MySqlDataReader dr;
+       
 
         List<Form4> list = new List<Form4>();
 
@@ -30,6 +31,23 @@ namespace WinFormsApp1
             InitializeComponent();
             numero = id;
 
+            string server = "localhost";
+            string username = "root";
+            string database = "hole_punching";
+         
+
+            try
+            {
+                Conn = new MySqlConnection();
+                Conn.ConnectionString = "server=" + server + ";" + "user id=" + username + ";" + "database=" + database;
+                Conn.Open();
+                // MessageBox.Show("connessione eseguita");
+
+            }
+            catch (MySqlException ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
 
@@ -39,7 +57,7 @@ namespace WinFormsApp1
 
             using (OpenFileDialog ofd = new OpenFileDialog() { Filter = "all files|*.*", ValidateNames = true })
             {
-
+            
                 //puo selezionare un singolo file non una cartella intera
                 // bisogna trovare un modo per caricare tutta la cartella.
                 if (ofd.ShowDialog() == DialogResult.OK)
@@ -49,44 +67,54 @@ namespace WinFormsApp1
                     // MessageBox.Show(ofd.FileName);
                     ListViewItem item = new ListViewItem(f.Name);
                     item.SubItems.Add(f.FullName);
-
                     // qui bisognerebbe fare tutti gli if in base all'estensione,  fare pdf, mp4, jpg, zip, rar e boh 
-
                     Estensione(item, f);
-
-
                     listView1.Items.Add(item);
 
+                    /* 
+                   //bisogna salvare nella lista di path in un database.
+                   sqlQuerry = "INSERT INTO `file` (`path`,`filename`, `userID`) VALUES ('" + f.FullName + "','" + f.Name + "','" + numero + "')";
+                   MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
+                   cmd.ExecuteNonQuery();
+                   */
 
-
-                    //bisogna salvare nella lista di path in un database.
-                    sqlQuerry = "INSERT INTO `file` (`path`,`filename`, `userID`) VALUES ('" + f.FullName + "','" + f.Name + "','" + numero + "')";
-
-                    MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-                    cmd.ExecuteNonQuery();
+                    // devo aggiungere l'elemento inserito nel file di testo che contine tutti i file condivisi
+                    using (StreamWriter outputFile = new StreamWriter("MyFile.txt",true))
+                    {
+                        outputFile.WriteLine(f.FullName);
+                    }
 
                 }
+            
             }
         }
 
 
 
-        private void onClickRimuovi(object sender, EventArgs e)
+        private void onClickRimuovi(object sender, EventArgs e)          // prossima ccosa 
         {
             // if(listView1.Items.Count > 0)
             if (listView1.SelectedItems.Count > 0)
             {
 
-                //  FileStream fs = File.Open("prova.txt", FileMode.Open, FileAccess.ReadWrite);
-                sqlQuerry = "DELETE  FROM file WHERE filename='" + listView1.SelectedItems[0].Text.ToString() + "'";
-                //fare funzionare la delete che per ora non va, dice colonna sconosciuta
-                MessageBox.Show(listView1.SelectedItems[0].Text.ToString());
-                MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-                try { cmd.ExecuteNonQuery(); }
-                catch (MySqlException ex)
-                {
-                    MessageBox.Show(ex.Message);
+                
 
+                 string[] readText = File.ReadAllLines("MyFile.txt");
+                // 2. pulisco il file
+                File.WriteAllText("MyFile.txt", String.Empty);
+
+                // 3. riccarico il file senza il path cancellato
+                using (StreamWriter writer = new StreamWriter("MyFile.txt"))
+                {
+                    foreach (string s in readText)
+                    {
+                        
+                        if (!s.Equals(listView1.SelectedItems[0].SubItems[1].Text))
+                        {
+                            writer.WriteLine(s);
+                        }
+
+                    }
                 }
 
                 listView1.Items.Remove(listView1.SelectedItems[0]);
@@ -147,52 +175,43 @@ namespace WinFormsApp1
         {
             labelCodice.Text = numero; // dovrei mettere ciò che mi restituisce il database
 
-            string server = "localhost";
-            string username = "root";
-            string database = "hole_punching";
-            dt = new DataTable();
+            /* 
+              sqlQuerry = "SELECT `path`,`filename` FROM file WHERE userID=" + numero;
 
+              MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
+              dr = cmd.ExecuteReader();
+              dt.Load(dr);
 
-            try
+              foreach (DataRow dr2 in dt.Rows)
+              {
+                  FileInfo f = new FileInfo(dr2["path"].ToString());
+                  ListViewItem item = new ListViewItem(dr2["filename"].ToString());
+                  item.SubItems.Add(f.FullName);
+                  Estensione(item, f);
+                  listView1.Items.Add(item);
+              }
+              // dovrei caricare  i precedenti file che l'utente rende disponivili
+              // quindi apro questo file dove ho salvato le informazioni sul path
+              // riempio la lista con le informazioni 
+              // chiudo il file
+              dr.Close();
+              dt.Clear();
+      */
+            //_------------------------------------------------------
+            // devo aprire il file dove ho conservato tutti i path dei mie elemmenti condivisi
+            // leggere ogni riga ed aggiungere gli elementi alla list view
+
+            StreamReader sr = new StreamReader("MyFile.txt");
+
+            while (!sr.EndOfStream)
             {
-                Conn = new MySqlConnection();
-                Conn.ConnectionString = "server=" + server + ";" + "user id=" + username + ";" + "database=" + database;
-                Conn.Open();
-                // MessageBox.Show("connessione eseguita");
-
-            }
-            catch (MySqlException ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            sqlQuerry = "SELECT `path`,`filename` FROM file WHERE userID=" + numero;
-
-            MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-            dr = cmd.ExecuteReader();
-            dt.Load(dr);
-
-            foreach (DataRow dr2 in dt.Rows)
-            {
-                FileInfo f = new FileInfo(dr2["path"].ToString());
-                ListViewItem item = new ListViewItem(dr2["filename"].ToString());
+               FileInfo f= new FileInfo(sr.ReadLine());
+                ListViewItem item = new ListViewItem(f.Name);
                 item.SubItems.Add(f.FullName);
-
                 Estensione(item, f);
-
                 listView1.Items.Add(item);
-
             }
-            // dovrei caricare  i precedenti file che l'utente rende disponivili
-            // quindi apro questo file dove ho salvato le informazioni sul path
-            // riempio la lista con le informazioni 
-            // chiudo il file
-            dr.Close();
-            dt.Clear();
-
-        }
-
-        private void listView1_SelectedIndexChanged(object sender, EventArgs e)
-        {
+            sr.Close();
 
         }
 
@@ -200,52 +219,46 @@ namespace WinFormsApp1
 
         private void onClickRicevitore(object sender, EventArgs e)
         {
-            dt.Clear();
 
             if (textCodice.Text.Length > 0 && textCodice.Text != numero)
-            {
-                //   try {
-                // sqlQuerry = "SELECT `filename` FROM file WHERE userID=" + textCodice.Text;
-                sqlQuerry = "SELECT`id` FROM utenti";
-                // MessageBox.Show(sqlQuerry);
-                MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-                dr = cmd.ExecuteReader();
-                dt = new DataTable();
-                dt.Load(dr);
-                try
-                {
-                    foreach (DataRow row in dt.Rows)
-                    {
-                        //  MessageBox.Show(row["id"].ToString());
-                        if (row["id"].ToString().Equals(textCodice.Text))
-                        {
-
-                            Form4 form4 = new Form4(textCodice.Text);
-                            list.Add(form4);
-                            form4.Show();
-                            //form4.ShowDialog();
-
-                            break;
-                        }
-
-                    }
-                    textCodice.Text = string.Empty;
-                }
-
-                catch (MySqlException ex)
-                {
-                    MessageBox.Show(ex.Message);
-                }
-
-                dr.Close();
-                dt.Clear();
-            }
-            else
-            {
-                textCodice.Text = string.Empty;
-                MessageBox.Show("inserisci un codice che non sia il tuo");
-            }
-
+                /* {
+                     //   try {
+                     // sqlQuerry = "SELECT `filename` FROM file WHERE userID=" + textCodice.Text;
+                     sqlQuerry = "SELECT`id` FROM utenti";
+                     // MessageBox.Show(sqlQuerry);
+                     MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
+                     dr = cmd.ExecuteReader();
+                     dt = new DataTable();
+                     dt.Load(dr);
+                     try
+                     {
+                         foreach (DataRow row in dt.Rows)
+                         {
+                             //  MessageBox.Show(row["id"].ToString());
+                             if (row["id"].ToString().Equals(textCodice.Text))
+                             {
+                                 Form4 form4 = new Form4(textCodice.Text);
+                                 list.Add(form4);
+                                 form4.Show();
+                                 //form4.ShowDialog();
+                                 break;
+                             }
+                         }
+                         textCodice.Text = string.Empty;
+                     }
+                     catch (MySqlException ex) {MessageBox.Show(ex.Message); }
+                     dr.Close();
+                     dt.Clear();
+                 }
+                 else { textCodice.Text = string.Empty;  MessageBox.Show("inserisci un codice che non sia il tuo");}
+                 */
+                MessageBox.Show("hai inserito un codice accettabile");  // devo fare in modo che il codice inserito sia mandato a go
+                                                                        // che dirà se corrisponderà a un id di un determinato utente,
+                                                                        // inoltre per poter far partire la richiesta esso deeve avere status uguale ad 1,
+                                                                        // se corrisponde si apre la finestra ricevitore di quel utente
+                                                                        // dopo che esso ha accettato la richiesta
+                    // quindi ricapitolando in input stringa alfanumerica di 4 cifre mandando a go mi ritornerà id dell'utente corrispondente
+                    // si fa la querry per vedere se ha status = 1 e se lo ha si avvia la richiesta per accedere alla sua schermata di condivisione
         }
 
         private void onClickVisualizza(object sender, EventArgs e)
@@ -272,11 +285,12 @@ namespace WinFormsApp1
                 item.ImageIndex = 9;
                 listView1.Items.Add(item);
 
-                sqlQuerry = "INSERT INTO `file` (`path`,`filename`, `userID`) VALUES ('" + f.FullName + "','" + f.Name + "','" + numero + "')";
-
-                MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-                cmd.ExecuteNonQuery();
-
+                // devo salvare il path della cartella nel file di testo
+                using (StreamWriter outputFile = new StreamWriter("MyFile.txt",true))
+                {
+                   
+                        outputFile.WriteLine(f.FullName);
+                }
             }
 
             //qui dato che apriamo una cartella si usa l'icona di una cartella
@@ -290,6 +304,11 @@ namespace WinFormsApp1
                 {
                     f.Close();
                 }
+
+            sqlQuerry = "UPDATE `utenti` SET `status`= 0 WHERE id='" + numero + "'";
+            MySqlCommand cmd1 = new MySqlCommand(sqlQuerry, Conn);
+            cmd1.ExecuteNonQuery();
+          
         }
     }
 }

@@ -19,13 +19,32 @@ namespace WinFormsApp1
         MySqlConnection Conn;
         string sqlQuerry;
         DataTable dt;
-        DataSet ds;
+     //  DataSet ds;
         MySqlDataReader dr;
         
         public Form4(string id)
         {
             InitializeComponent();
             utente = id;
+
+            string server = "localhost";
+            string username = "root";
+            string database = "hole_punching";
+            dt = new DataTable();
+
+
+            try
+            {
+                Conn = new MySqlConnection();
+                Conn.ConnectionString = "server=" + server + ";" + "user id=" + username + ";" + "database=" + database;
+                Conn.Open();
+                // MessageBox.Show("connessione eseguita");
+
+            }
+            catch (MySqlException ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         private void listView2_SelectedIndexChanged(object sender, EventArgs e)
@@ -81,24 +100,7 @@ namespace WinFormsApp1
         {
             labelCodiceR.Text = utente;
 
-            string server = "localhost";
-            string username = "root";
-            string database = "hole_punching";
-            dt = new DataTable();
-
-
-            try
-            {
-                Conn = new MySqlConnection();
-                Conn.ConnectionString = "server=" + server + ";" + "user id=" + username + ";" + "database=" + database;
-                Conn.Open();
-                // MessageBox.Show("connessione eseguita");
-
-            }
-            catch (MySqlException ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+           
             sqlQuerry = "SELECT `path`,`filename` FROM file WHERE userID=" + utente;
 
             MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
@@ -119,9 +121,6 @@ namespace WinFormsApp1
 
             dr.Close();
             dt.Clear();
-
-
-
 
 
         }

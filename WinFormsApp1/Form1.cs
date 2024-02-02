@@ -47,14 +47,12 @@ namespace WinFormsApp1
             DataSet ds = new DataSet();
             MySqlDataReader dr;
 
-
             lblError.Text = string.Empty;
             sqlQuerry = "SELECT `id`,`username`,`password` FROM utenti";
             MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
             dr = cmd.ExecuteReader();
             dt.Load(dr);
 
-            
 
             foreach (DataRow dr2 in dt.Rows)
             {
@@ -64,6 +62,11 @@ namespace WinFormsApp1
                 //senno mostrare un messaggio di errore
                 {
                     id=dr2["id"].ToString();
+                    // attraverso il collegamento al serve go id non sarà quello autoincrement
+                    // ma sarà una stringa di 4 caratteri alfanumerici
+                    sqlQuerry = "UPDATE `utenti` SET `status`= 1 WHERE username='"+dr2["username"].ToString()+"'";
+                    MySqlCommand cmd1=new MySqlCommand(sqlQuerry, Conn);
+                    cmd1.ExecuteNonQuery();
                     flag = false; break;
                 }
                 else
@@ -90,8 +93,8 @@ namespace WinFormsApp1
                 Form3 form3 = new Form3(id);
                 form3.ShowDialog();
                
-
                 this.Visible = true;
+
                 //bisognerebbe togliere il form di accesso ma se lo chiudo viene chiuso tutto
                 //e se lo nascondo rimane aperto come processo in backgrounf
 
