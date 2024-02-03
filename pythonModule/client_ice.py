@@ -20,6 +20,7 @@ while True:
 
 data = sock.recv(1024).decode()
 ip, sport, dport = data.split(' ')
+print(data.split(' '))
 sport = int(sport)
 dport = int(dport)
 
