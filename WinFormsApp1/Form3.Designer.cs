@@ -48,35 +48,26 @@
             // 
             // label1
             // 
-            label1.AutoSize = true;
-            label1.Location = new Point(12, 53);
+            resources.ApplyResources(label1, "label1");
             label1.Name = "label1";
-            label1.Size = new Size(226, 20);
-            label1.TabIndex = 0;
-            label1.Text = "seleziona i file da rendere visibili";
             // 
             // listView1
             // 
             listView1.Columns.AddRange(new ColumnHeader[] { columnHeader1, columnHeader2 });
             listView1.LargeImageList = imageList1;
-            listView1.Location = new Point(145, 107);
+            resources.ApplyResources(listView1, "listView1");
             listView1.Name = "listView1";
-            listView1.Size = new Size(734, 334);
             listView1.SmallImageList = imageList1;
-            listView1.TabIndex = 1;
             listView1.UseCompatibleStateImageBehavior = false;
             listView1.View = View.Details;
-            listView1.SelectedIndexChanged += listView1_SelectedIndexChanged;
             // 
             // columnHeader1
             // 
-            columnHeader1.Text = "Name";
-            columnHeader1.Width = 320;
+            resources.ApplyResources(columnHeader1, "columnHeader1");
             // 
             // columnHeader2
             // 
-            columnHeader2.Text = "Path";
-            columnHeader2.Width = 360;
+            resources.ApplyResources(columnHeader2, "columnHeader2");
             // 
             // imageList1
             // 
@@ -96,93 +87,63 @@
             // 
             // AggiungiButton
             // 
-            AggiungiButton.Location = new Point(26, 146);
+            resources.ApplyResources(AggiungiButton, "AggiungiButton");
             AggiungiButton.Name = "AggiungiButton";
-            AggiungiButton.Size = new Size(94, 29);
-            AggiungiButton.TabIndex = 2;
-            AggiungiButton.Text = "Aggiungi";
             AggiungiButton.UseVisualStyleBackColor = true;
             AggiungiButton.Click += onClickAggiungi;
             // 
             // rimuoviButton
             // 
-            rimuoviButton.Location = new Point(26, 121);
+            resources.ApplyResources(rimuoviButton, "rimuoviButton");
             rimuoviButton.Name = "rimuoviButton";
-            rimuoviButton.Size = new Size(94, 29);
-            rimuoviButton.TabIndex = 5;
-            rimuoviButton.Text = "rimuovi";
             rimuoviButton.UseVisualStyleBackColor = true;
             rimuoviButton.Click += onClickRimuovi;
             // 
             // label2
             // 
-            label2.AutoSize = true;
-            label2.Location = new Point(745, 53);
+            resources.ApplyResources(label2, "label2");
             label2.Name = "label2";
-            label2.Size = new Size(105, 20);
-            label2.TabIndex = 6;
-            label2.Text = "il tuo codice =";
             // 
             // labelCodice
             // 
-            labelCodice.AutoSize = true;
-            labelCodice.Location = new Point(856, 53);
-            labelCodice.Margin = new Padding(0);
+            resources.ApplyResources(labelCodice, "labelCodice");
             labelCodice.Name = "labelCodice";
-            labelCodice.Size = new Size(0, 20);
-            labelCodice.TabIndex = 7;
             // 
             // codiceRicevitore
             // 
-            codiceRicevitore.Location = new Point(12, 501);
+            resources.ApplyResources(codiceRicevitore, "codiceRicevitore");
             codiceRicevitore.Name = "codiceRicevitore";
-            codiceRicevitore.Size = new Size(121, 27);
-            codiceRicevitore.TabIndex = 8;
-            codiceRicevitore.Text = "Inserire il codice ";
-            codiceRicevitore.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // textCodice
             // 
-            textCodice.Location = new Point(145, 501);
+            resources.ApplyResources(textCodice, "textCodice");
             textCodice.Name = "textCodice";
-            textCodice.Size = new Size(125, 27);
-            textCodice.TabIndex = 9;
             // 
             // buttonRicevitore
             // 
-            buttonRicevitore.Location = new Point(276, 501);
+            resources.ApplyResources(buttonRicevitore, "buttonRicevitore");
             buttonRicevitore.Name = "buttonRicevitore";
-            buttonRicevitore.Size = new Size(94, 27);
-            buttonRicevitore.TabIndex = 10;
-            buttonRicevitore.Text = "Invio";
             buttonRicevitore.UseVisualStyleBackColor = true;
             buttonRicevitore.Click += onClickRicevitore;
             // 
             // buttonVisualizzazione
             // 
-            buttonVisualizzazione.Location = new Point(418, 35);
+            resources.ApplyResources(buttonVisualizzazione, "buttonVisualizzazione");
             buttonVisualizzazione.Name = "buttonVisualizzazione";
-            buttonVisualizzazione.Size = new Size(119, 57);
-            buttonVisualizzazione.TabIndex = 11;
-            buttonVisualizzazione.Text = "Cambia Visualizzazione";
             buttonVisualizzazione.UseVisualStyleBackColor = true;
             buttonVisualizzazione.Click += onClickVisualizza;
             // 
             // buttonFolder
             // 
-            buttonFolder.Location = new Point(12, 371);
+            resources.ApplyResources(buttonFolder, "buttonFolder");
             buttonFolder.Name = "buttonFolder";
-            buttonFolder.Size = new Size(108, 49);
-            buttonFolder.TabIndex = 12;
-            buttonFolder.Text = "Aggiungi Cartella";
             buttonFolder.UseVisualStyleBackColor = true;
             buttonFolder.Click += onClickFolder;
             // 
             // Form3
             // 
-            AutoScaleDimensions = new SizeF(8F, 20F);
+            resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(978, 561);
             Controls.Add(buttonFolder);
             Controls.Add(buttonVisualizzazione);
             Controls.Add(buttonRicevitore);
@@ -194,8 +155,8 @@
             Controls.Add(AggiungiButton);
             Controls.Add(listView1);
             Controls.Add(label1);
+            MaximizeBox = false;
             Name = "Form3";
-            Text = "Form3";
             FormClosing += Form3_FormClosing;
             Load += Form3_Load;
             ResumeLayout(false);

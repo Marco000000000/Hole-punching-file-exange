@@ -12,6 +12,7 @@ using System.Net;
 using MySql.Data.MySqlClient;
 using System.Data.Common;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
+using System.Net.Sockets;
 
 namespace WinFormsApp1
 {
@@ -37,7 +38,6 @@ namespace WinFormsApp1
                 Conn.ConnectionString = "server=" + server + ";" + "user id=" + username + ";" + "database=" + database;
                 Conn.Open();
                // MessageBox.Show("connessione eseguita");
-
             }
             catch (MySqlException ex)
             {
@@ -94,34 +94,49 @@ namespace WinFormsApp1
                 }
             }
             
-           string hostName = Dns.GetHostName();
-           string myIP = Dns.GetHostByName(hostName).AddressList[0].MapToIPv4().ToString();
+            
+            /*
+            //  string hostName = Dns.GetHostName();
+            //string myIP = Dns.GetHostByName(hostName).AddressList[0].MapToIPv4().ToString(); 
+                                                         // in questo modo si prende solo il primo indirizzo associato al dispositivo
+            // string  myIP = Dns.GetHostEntry(hostName).AddressList[0].MapToIPv4().ToString();   
+
+            string myIP=string.Empty;
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)    //cosi prendo ip locale che il router assegna
+                {
+                    myIP= ip.ToString();
+                }
+            }
+            if (myIP.Equals(""))
+            {
+                flag = true;
+                MessageBox.Show("errore nell' individuazione dell' indirizzo ipv4 poiche nessun adattatore di rete con indirizzo IPv4 è presente nel sistema!");
+            }
             // in questo modo è una stringa esadecimale ipv6,
             // chiedere a marco se è meglio ipv4 nel classico formato  puntato
             // lblErrorName.Text = hostName;
             // lblErrorPassword.Text = myIP;
             // flag = true; usato solo per non fare chiudere la scheda
-
-
+            */
 
             if (flag == false)
             {
-                // se va tutto bene si inviano al programma in python nome password
-                // per eseguire la ergistrazione nel database e si chiude la scheda 
-                // tornando alla scheda del login
+             
                 //---------------
                 //invio al database nome, cognome e indirizzo IP per proseguire la registrazione
                 //se tutto va bene chiudo la scheda, se dovessero esserci problemi,
                 //ad esempio utente gia registrato, password che non rispetta delle regole specifiche
                 //notificare l'errore
-                sqlQuerry = "INSERT INTO `utenti` (`username`, `password`, `address`) VALUES ('" + textName.Text + "','" + textPassword.Text + "','" + myIP + "')";
+                sqlQuerry = "INSERT INTO `utenti` (`username`, `password`) VALUES ('" + textName.Text + "','" + textPassword.Text + "')";
                 try
                 {
                     if (Conn != null)
                     {
                         cmd = new MySqlCommand(sqlQuerry, Conn);
                         cmd.ExecuteNonQuery();
-
 
                     }
                 }
@@ -131,11 +146,6 @@ namespace WinFormsApp1
                 }
                 this.Close();
             }
-        }
-
-        private void textName_TextChanged(object sender, EventArgs e)
-        {
-
         }
     }
 }

@@ -52,7 +52,6 @@
             listView2.TabIndex = 2;
             listView2.UseCompatibleStateImageBehavior = false;
             listView2.View = View.Details;
-            listView2.SelectedIndexChanged += listView2_SelectedIndexChanged;
             // 
             // columnHeader1
             // 
@@ -138,6 +137,7 @@
             Controls.Add(label1);
             Controls.Add(buttonSeleziona);
             Controls.Add(listView2);
+            MaximizeBox = false;
             Name = "Form4";
             Text = "Form4";
             Load += Form4_Load;

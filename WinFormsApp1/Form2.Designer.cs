@@ -71,7 +71,6 @@
             textName.Name = "textName";
             textName.Size = new Size(125, 27);
             textName.TabIndex = 7;
-            textName.TextChanged += textName_TextChanged;
             // 
             // labelNome
             // 
@@ -117,9 +116,8 @@
             lblErrorPassword.ForeColor = Color.Red;
             lblErrorPassword.Location = new Point(360, 268);
             lblErrorPassword.Name = "lblErrorPassword";
-            lblErrorPassword.Size = new Size(116, 20);
+            lblErrorPassword.Size = new Size(0, 20);
             lblErrorPassword.TabIndex = 13;
-            lblErrorPassword.Text = " label per errore";
             // 
             // Form2
             // 
@@ -135,6 +133,7 @@
             Controls.Add(textName);
             Controls.Add(labelNome);
             Controls.Add(labelRegistrazione);
+            MaximizeBox = false;
             Name = "Form2";
             Text = "Form2";
             Load += Form2_Load;
