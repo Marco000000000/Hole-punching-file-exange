@@ -35,9 +35,8 @@ print('punching hole')
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('0.0.0.0', sport))
-sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock.sendto(b'0', (ip, dport))
-
+sock.close()
 print('ready to exchange messages\n')
 
 # listen for
