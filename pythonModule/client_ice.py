@@ -2,7 +2,7 @@ import socket
 import sys
 import threading
 
-rendezvous = ('127.0.0.1', 55555)
+rendezvous = ('37.102.123.139', 55555)
 
 # connect to rendezvous
 print('connecting to rendezvous server')
