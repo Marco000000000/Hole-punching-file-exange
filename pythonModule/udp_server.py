@@ -34,8 +34,9 @@ def main(host='127.0.0.1', port=80):
     while True:
         data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
         logger.info("connection from: %s", addr)
-        addresses.append(addr)
-        print(addresses)
+        if(addr not in addresses):
+            addresses.append(addr)
+            print(addresses)
         if len(addresses) >= 2:
             logger.info("server - send client info to: %s", addresses[0])
             sock.sendto(addr_to_msg(addresses[1]), addresses[0])

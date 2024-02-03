@@ -43,7 +43,7 @@ def get_all_files_in_directory(directory_path):
     with os.scandir(directory_path) as entries:
         for entry in entries:
             if entry.is_file():
-                file_names[entry.name]="file"
+                file_names[entry.name]="file"#fare una lista
             else:
                 file_names[entry.name]="directory"
     
@@ -171,7 +171,7 @@ def connect(local_addr, addr):
         
 
 
-def main(host="151.54.53.122", port=5000):
+def main(host="37.102.123.139", port=5000):
     sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     httpPort="80"

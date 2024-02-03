@@ -6,24 +6,27 @@ from util import *
 
 logger = logging.getLogger()
 
-
 def main(host='151.54.53.122', port=80):
     sock = socket.socket(socket.AF_INET, # Internet
                          socket.SOCK_DGRAM) # UDP
-    sock.sendto(b'0', (host, port))
 
     while True:
+        sock.sendto(b'0', (host, port))
+
         data, addr = sock.recvfrom(1024)
         print('client received: {} {}'.format(addr, data))
         addr = msg_to_addr(data)
-        while True:
-            try:
-                sock.sendto(b'0', addr)
-                sock.settimeout(1)
-                data, addr = sock.recvfrom(1024)
-            except:
-                time.sleep(0.1)
-                continue
+        print(addr)
+        try:
+            sock.sendto(b'0', addr)
+            print("invio a "+addr)
+            sock.sendto(b'0', addr)
+            data, addr = sock.recvfrom(1024)
+        except:
+            sock.sendto(b'0', (host, port))
+
+            time.sleep(1)
+            continue
         print('client received: {} {}'.format(addr, data))
 
 
