@@ -17,8 +17,8 @@ while True:
     if data.strip() == 'ready':
         print('checked in with server, waiting')
         break
-sock.close()
 data = sock.recv(1024).decode()
+sock.close()
 ip, sport, dport = data.split(' ')
 print(data.split(' '))
 sport = int(sport)
