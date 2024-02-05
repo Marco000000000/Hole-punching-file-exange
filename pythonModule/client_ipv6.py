@@ -26,7 +26,8 @@ def start_server():
 
 def start_client():
     client = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-    server_address = ("[fe80::fa30:82a1:fa5f:6ac0%5]", 9999)  # Replace with the server's IPv6 address
+    server_address = ("fe80::32b5:c2ff:fea2:a79d%11", 9999)  # Replace with the server's IPv6 address
+    
     client.connect(server_address)
 
     while True:

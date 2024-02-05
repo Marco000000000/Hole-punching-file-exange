@@ -10,6 +10,8 @@ import time
 from util import *
 import requests
 import base64
+from flask import Flask, request
+app = Flask(__name__)
 socket.SO_REUSEPORT = socket.SO_REUSEADDR
 DOWNLOADPATH=os.getenv("downloadPath","download")
 DOWNLOADDIRECTORY=os.getenv("downloadDirectory","downloadDirectory")
@@ -219,9 +221,24 @@ def main(host="37.102.123.139", port=5000):
                 continue
             if not threads[name].is_alive():
                 threads.pop(name)
+@app.route('/', methods=['GET'])
+def handleMessage():
+    query_type = request.args.get('query')
+    if query_type== "connect":
+        pass
+    elif query_type=="disconnect":
+        pass
+    elif query_type=="download":
+        pass
+    elif query_type=="names":
+        pass
+
 
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, message='%(asctime)s %(message)s')
     main()
+    hostname = socket.gethostname()
+
+    app.run(debug=False,host=socket.gethostbyname_ex(hostname)[2][0],port=80,threaded=True)
