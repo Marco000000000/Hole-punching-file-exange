@@ -143,15 +143,18 @@ class connector:
         else:
             logger.info("connected from %s to %s success!", local_addr, addr)
     def get_all_files_in_directory(directory_path):
-        file_names = []
-        
-        # List all files in the directory
+        file_names = {}
+    
+    # List all files in the directory
         with os.scandir(directory_path) as entries:
             for entry in entries:
-                file_names.append(entry.name)
-                
-        
+                if entry.is_file():
+                    file_names[entry.name]="file"#fare una lista
+                else:
+                    file_names[entry.name]="directory"
+                    
         return file_names
+    
     def __handleFirstMessage__(self,s,role):
         if role == "server":
             send_msg(s,json.dumps(self.get_all_files_in_directory(DOWNLOADPATH)).encode("utf-8"))
@@ -237,23 +240,22 @@ class connector:
             if type=="connect":
                 while True:
                     try:
-                        operation=2
-                        path="download"
-                        send_msg(s,"salve".encode("utf-8"))
-                        logger.info("inviato: %s","salve")
+                        # path="download"
+                        # send_msg(s,"salve".encode("utf-8"))
+                        # logger.info("inviato: %s","salve")
                         print(self.__handleFirstMessage__(s,role))
-                        if operation>0:
-                            if operation==1:
-                                print(self.__handleFileDownload__(s,path,"client"))
-                                operation=0
+                        if self.operation>0:
+                            if self.operation==1:
+                                print(self.__handleFileDownload__(s,self.path,"client"))
+                                self.operation=0
                                 
-                            elif operation == 2:
-                                print(self.__handleSincronizeDownload__(s,path,"client"))
-                                operation=0
+                            elif self.operation == 2:
+                                print(self.__handleSincronizeDownload__(s,self.path,"client"))
+                                self.operation=0
                                 
-                            elif operation == 3:
-                                print(self.__handleDirectoryFiles__(s,path,"client"))
-                                operation=0
+                            elif self.operation == 3:
+                                print(self.__handleDirectoryFiles__(s,self.path,"client"))
+                                self.operation=0
                         else:
                             self.__handleHearthBit__(s,"client")     
                     except:
@@ -292,16 +294,74 @@ class connector:
         finally:
             self.__mutex__.release()
             
+    def __handleHttpHearthBit__(self):
+        response=requests.get("http://"+TURNSERVER+"/hearthBit/"+self.code)
+        data=response.json()
+        if "operation" in data:
+            self._handleTurnOperation_(data["path"],data["operation"],data["code"])
 
-    
+    def _handleTurnOperation_(self,path,operation,code):
+        if operation==1: 
+            files = {path.split("/")[-1]: open(path, 'rb')}
+            requests.post("http://"+TURNSERVER+"/response/"+code, files=files)
+        elif operation==3:
+            requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.get_all_files_in_directory(path)))
+        else:
+            requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps({"error":"Bad Operation"}))
+
             
+
     def __getPermission__(self):
         httpPort="80"
         print("http://"+TURNSERVER+":"+httpPort+"/holePunch/"+self.code)
         firstCall=requests.get("http://"+TURNSERVER+":"+httpPort+"/holePunch/"+self.code)
         return firstCall.json
+    
 
+    def __turnDownload__(self,data,subPath=""):
+        try:
+            response= requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data))
+            with open(os.path.join( DOWNLOADDIRECTORY,subPath,data["path"].split(os.path.sep)[-1]), 'wb') as received_file:
+                received_file.write(response.content)
+            return True
+        except:
+            return False
 
+    def __turnFilenames__(self,data):
+        response= requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data))
+        return json.loads(response.content.decode("utf-8"))
+
+    def __turnSincronizeDirectory__(self,data,subPath=""):
+            files=self.__turnFilenames__(data)
+            for file in files:
+                print("file:"+file)
+                print("is:"+files[file])
+                requestPath=os.path.join(data["path"],file)
+                print("requestPath:"+requestPath)
+                print("subPath:"+subPath)
+                if files[file]=="file":
+                    print(self.__turnDownload__(data,subPath))
+                else:
+                    os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
+                    print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
+                    self.__turnSincronizeDirectory__(data,os.path.join(subPath,file))
+            return True
+
+    def turnOperation(self,user,code,peer_username,peer_code,operation,path):
+        data={
+                "username":user,
+                "code":code,
+                "peer_username":peer_username,
+                "peer_code":peer_code,
+                "operation":operation,
+                "path":path
+            }
+        if operation==1:
+            return self.__turnDownload__(data)
+        elif operation==2:
+            return self.__turnSincronizeDirectory__(data)
+        else:
+            return self.__turnFilenames__(data)
     def handleOperation(self,peer_username,peer_code,path,operation):
         if self.holeCreated:
             self.__newClientOperation__(operation,path)
@@ -315,10 +375,15 @@ class connector:
 
 @app.route('/', methods=['GET'])
 def handleMessage():
+    if request.remote_addr != '127.0.0.1':
+        return "Forbidden: Only localhost connections are allowed.", 403
+
+    
     query_type = request.args.get('query')
     user=request.args.get('user')
     code=request.args.get('code')
     path=request.path
+    
     global clientConnector
     global serverConnector
     if query_type=="download":
