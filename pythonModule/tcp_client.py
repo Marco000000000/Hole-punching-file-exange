@@ -39,12 +39,14 @@ class connector:
         self.operation=0
         self.path=None
 
-    def __create_hole__(self,host=TURNSERVER, port=5000):
+    def __create_hole__(self,host=TURNSERVER, port=5000,peer_username="",peer_code=""):
         if self.holeCreated:
             return True
         elif self.HoleFailed:
             return False
-        self.__getPermission__()
+        if self.role=="client":
+            self.__getPermission__(peer_username,peer_code)
+        
         sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     
@@ -295,15 +297,23 @@ class connector:
             self.__mutex__.release()
             
     def __handleHttpHearthBit__(self):
-        response=requests.get("http://"+TURNSERVER+"/hearthBit/"+self.code)
-        data=response.json()
-        if "operation" in data:
-            self._handleTurnOperation_(data["path"],data["operation"],data["code"])
+        while True:
+            try:
+                response=requests.get("http://"+TURNSERVER+"/hearthBit/"+self.code)
+                data=response.json()
+                if "operation" in data:
+                    self.__handleTurnOperation__(data["path"],data["operation"],data["code"])
+            except:
+                print("exception in handle HTTP hearth bit")
 
-    def _handleTurnOperation_(self,path,operation,code):
+    def __handleTurnOperation__(self,path,operation,code):
+        #inserire una get per l'accettazione
         if operation==1: 
             files = {path.split("/")[-1]: open(path, 'rb')}
             requests.post("http://"+TURNSERVER+"/response/"+code, files=files)
+        elif operation==4:
+            requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps({"AcceptHole":True}))
+            self.__create_hole__()
         elif operation==3:
             requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.get_all_files_in_directory(path)))
         else:
@@ -320,7 +330,7 @@ class connector:
 
     def __turnDownload__(self,data,subPath=""):
         try:
-            response= requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data))
+            response= requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data),timeout=60)
             with open(os.path.join( DOWNLOADDIRECTORY,subPath,data["path"].split(os.path.sep)[-1]), 'wb') as received_file:
                 received_file.write(response.content)
             return True
@@ -328,24 +338,27 @@ class connector:
             return False
 
     def __turnFilenames__(self,data):
-        response= requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data))
+        response= requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data),timeout=60)
         return json.loads(response.content.decode("utf-8"))
 
     def __turnSincronizeDirectory__(self,data,subPath=""):
-            files=self.__turnFilenames__(data)
-            for file in files:
-                print("file:"+file)
-                print("is:"+files[file])
-                requestPath=os.path.join(data["path"],file)
-                print("requestPath:"+requestPath)
-                print("subPath:"+subPath)
-                if files[file]=="file":
-                    print(self.__turnDownload__(data,subPath))
-                else:
-                    os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
-                    print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
-                    self.__turnSincronizeDirectory__(data,os.path.join(subPath,file))
-            return True
+            try:
+                files=self.__turnFilenames__(data)
+                for file in files:
+                    print("file:"+file)
+                    print("is:"+files[file])
+                    requestPath=os.path.join(data["path"],file)
+                    print("requestPath:"+requestPath)
+                    print("subPath:"+subPath)
+                    if files[file]=="file":
+                        print(self.__turnDownload__(data,subPath))
+                    else:
+                        os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
+                        print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
+                        self.__turnSincronizeDirectory__(data,os.path.join(subPath,file))
+                return True
+            except:
+                return False
 
     def turnOperation(self,user,code,peer_username,peer_code,operation,path):
         data={
@@ -362,15 +375,24 @@ class connector:
             return self.__turnSincronizeDirectory__(data)
         else:
             return self.__turnFilenames__(data)
+        
+
     def handleOperation(self,peer_username,peer_code,path,operation):
         if self.holeCreated:
             self.__newClientOperation__(operation,path)
         else:
-            if self.__create_hole__(peer_username,peer_code):
+            if self.__create_hole__(peer_username=peer_username,peer_code=peer_code):
                 self.__newClientOperation__(operation,path)
                 return True
             else:
                 return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+            
+
+
+    def __startServer__(self):
+        thread=threading.Thread(target=self.__handleHttpHearthBit__)
+        thread.start()
+
 
 
 @app.route('/', methods=['GET'])
@@ -404,6 +426,8 @@ def handleMessage():
     elif query_type=="start_share":
         if serverConnector is None:
             serverConnector=connector(user,code,"server")
+            serverConnector.__startServer__()
+        
     else:
         return jsonify({"error":"bad query"}),400
 
