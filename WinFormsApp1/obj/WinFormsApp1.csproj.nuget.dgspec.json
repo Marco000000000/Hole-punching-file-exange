@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\giuse\\source\\repos\\WinFormsApp1\\WinFormsApp1.csproj": {}
+    "C:\\Users\\giuse\\OneDrive\\Documenti\\GitHub\\Hole-punching-file-exange\\WinFormsApp1\\WinFormsApp1.csproj": {}
   },
   "projects": {
-    "C:\\Users\\giuse\\source\\repos\\WinFormsApp1\\WinFormsApp1.csproj": {
+    "C:\\Users\\giuse\\OneDrive\\Documenti\\GitHub\\Hole-punching-file-exange\\WinFormsApp1\\WinFormsApp1.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\giuse\\source\\repos\\WinFormsApp1\\WinFormsApp1.csproj",
+        "projectUniqueName": "C:\\Users\\giuse\\OneDrive\\Documenti\\GitHub\\Hole-punching-file-exange\\WinFormsApp1\\WinFormsApp1.csproj",
         "projectName": "WinFormsApp1",
-        "projectPath": "C:\\Users\\giuse\\source\\repos\\WinFormsApp1\\WinFormsApp1.csproj",
+        "projectPath": "C:\\Users\\giuse\\OneDrive\\Documenti\\GitHub\\Hole-punching-file-exange\\WinFormsApp1\\WinFormsApp1.csproj",
         "packagesPath": "C:\\Users\\giuse\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\giuse\\source\\repos\\WinFormsApp1\\obj\\",
+        "outputPath": "C:\\Users\\giuse\\OneDrive\\Documenti\\GitHub\\Hole-punching-file-exange\\WinFormsApp1\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\giuse\\AppData\\Roaming\\NuGet\\NuGet.Config",

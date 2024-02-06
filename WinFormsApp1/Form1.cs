@@ -52,15 +52,11 @@ static async Task<string> Richiestago()
         {
             // Effettua una richiesta GET al server
             string responseString = await client.GetStringAsync(serverURL);
-            // Stampa la sequenza ricevuta dal server
-            //Console.WriteLine("Sequenza casuale dal server:");
-            //Console.WriteLine(responseString);
             return responseString;
         }
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message);
-           // Console.WriteLine($"Errore nella richiesta: {ex.Message}");
             return "";
         }
         
@@ -83,6 +79,7 @@ static async Task<string> Richiestago()
 
             foreach (DataRow dr2 in dt.Rows)
             {
+                //da fare su go
                 if (textName.Text.Equals(dr2["username"].ToString()) && textPassword.Text.Equals(dr2["password"].ToString()))
                 //dovrei confrontare i valori inseriti
                 //con valori presenti nel database se c'� match accedere       
