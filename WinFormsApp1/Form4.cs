@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using MySql.Data.MySqlClient;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.Net.Sockets;
 
 namespace WinFormsApp1
 {
@@ -99,8 +100,46 @@ namespace WinFormsApp1
         private void Form4_Load(object sender, EventArgs e)
         {
             labelCodiceR.Text = utente;
-
+                
            
+                string serverAddress = "localhost";
+                int serverPort = 12345;
+
+                TcpClient client = new TcpClient(serverAddress, serverPort);
+
+                // Invia l'identificativo del client di tipo 1
+                string clientId = utente;
+                string message = $"{clientId};{"nessun dato"}";
+                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(message);
+                // byte[] buffer = System.Text.Encoding.UTF8.GetBytes(clientId);
+                NetworkStream stream = client.GetStream();
+                stream.Write(buffer, 0, buffer.Length);
+
+                // Ricevi i dati dal server
+                buffer = new byte[1024];
+                int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                // string receivedData = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                string[] lines = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead).Split(new string[] { "\r\n", "\r", "\n" },StringSplitOptions.None);
+                foreach (string line in lines)
+                {
+                    // MessageBox.Show(line);
+                    if(!line.Equals("")){
+                    FileInfo f = new FileInfo(line);
+                    ListViewItem item = new ListViewItem(f.Name);
+                    item.SubItems.Add(f.FullName);
+                    Estensione(item, f);
+                    listView2.Items.Add(item);
+                    }
+                
+                    }
+                              
+                //  Console.WriteLine($"Dati ricevuti dal server: {receivedData}");
+
+                client.Close();
+                    
+
+            //---------------------
+           /*
             sqlQuerry = "SELECT `path`,`filename` FROM file WHERE userID=" + utente;
 
             MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
@@ -122,7 +161,7 @@ namespace WinFormsApp1
             dr.Close();
             dt.Clear();
 
-
+            */
         }
 
         private void onClickVisualizzazione(object sender, EventArgs e)

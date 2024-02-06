@@ -13,6 +13,7 @@ using System.Windows.Forms;
 using Microsoft.VisualBasic.ApplicationServices;
 using MySql.Data.MySqlClient;
 using static System.Windows.Forms.LinkLabel;
+using System.Net.Sockets;
 
 namespace WinFormsApp1
 {
@@ -171,32 +172,41 @@ namespace WinFormsApp1
 
         }
 
-        private void Form3_Load(object sender, EventArgs e)
+   private void Form3_Load(object sender, EventArgs e)
         {
-            labelCodice.Text = numero; // dovrei mettere ciò che mi restituisce il database
+           labelCodice.Text = numero; // dovrei mettere ciò che mi restituisce il database
 
-            /* 
-              sqlQuerry = "SELECT `path`,`filename` FROM file WHERE userID=" + numero;
+            //fare magari un if se il file MyFile.txt non esiste allora crealo
+            if (!File.Exists("MyFile.txt"))
+            {
+                using (StreamWriter sw = File.CreateText("MyFile.txt")) { }
+            }
+                    
+                string serverAddress = "localhost";
+                int serverPort = 12345;
 
-              MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-              dr = cmd.ExecuteReader();
-              dt.Load(dr);
+                TcpClient client = new TcpClient(serverAddress, serverPort);
 
-              foreach (DataRow dr2 in dt.Rows)
-              {
-                  FileInfo f = new FileInfo(dr2["path"].ToString());
-                  ListViewItem item = new ListViewItem(dr2["filename"].ToString());
-                  item.SubItems.Add(f.FullName);
-                  Estensione(item, f);
-                  listView1.Items.Add(item);
-              }
+                // Invia l'identificativo seguito dai dati
+                string clientId = numero;
+                // string data = "Questi sono i dati da condividere con il server.";
+                string data = File.ReadAllText("MyFile.txt");
+                string message = $"{clientId};{data}";
+                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(message);
+                NetworkStream stream = client.GetStream();
+                stream.Write(buffer, 0, buffer.Length);
+                client.Close();
+                       
+
+
+            
+           // ---------------
               // dovrei caricare  i precedenti file che l'utente rende disponivili
               // quindi apro questo file dove ho salvato le informazioni sul path
               // riempio la lista con le informazioni 
               // chiudo il file
-              dr.Close();
-              dt.Clear();
-      */
+
+      
             //_------------------------------------------------------
             // devo aprire il file dove ho conservato tutti i path dei mie elemmenti condivisi
             // leggere ogni riga ed aggiungere gli elementi alla list view
@@ -252,7 +262,13 @@ namespace WinFormsApp1
                  }
                  else { textCodice.Text = string.Empty;  MessageBox.Show("inserisci un codice che non sia il tuo");}
                  */
-                MessageBox.Show("hai inserito un codice accettabile");  // devo fare in modo che il codice inserito sia mandato a go
+                 {
+                    MessageBox.Show("hai inserito un codice accettabile");
+                     Form4 form4 = new Form4(textCodice.Text);
+                      list.Add(form4);
+                      form4.Show();
+                 }
+                  // devo fare in modo che il codice inserito sia mandato a go
                                                                         // che dirà se corrisponderà a un id di un determinato utente,
                                                                         // inoltre per poter far partire la richiesta esso deeve avere status uguale ad 1,
                                                                         // se corrisponde si apre la finestra ricevitore di quel utente

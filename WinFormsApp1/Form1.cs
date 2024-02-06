@@ -1,7 +1,9 @@
 
-
+using System;
 using System.Data;
 using MySql.Data.MySqlClient;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace WinFormsApp1
 {
@@ -38,8 +40,33 @@ namespace WinFormsApp1
             
         }
 
+static async Task<string> Richiestago()
+    {
+        // Indirizzo del server (assicurati che sia in ascolto)
+        string serverURL = "http://localhost:8000";
 
-        private void onClickLogin(object sender, EventArgs e)
+        // Crea un oggetto HttpClient
+        var client = new HttpClient();
+
+        try
+        {
+            // Effettua una richiesta GET al server
+            string responseString = await client.GetStringAsync(serverURL);
+            // Stampa la sequenza ricevuta dal server
+            //Console.WriteLine("Sequenza casuale dal server:");
+            //Console.WriteLine(responseString);
+            return responseString;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message);
+           // Console.WriteLine($"Errore nella richiesta: {ex.Message}");
+            return "";
+        }
+        
+    }
+
+        private async void onClickLogin(object sender, EventArgs e)
         {
             string id="default";
             bool flag = false;
@@ -58,16 +85,27 @@ namespace WinFormsApp1
             {
                 if (textName.Text.Equals(dr2["username"].ToString()) && textPassword.Text.Equals(dr2["password"].ToString()))
                 //dovrei confrontare i valori inseriti
-                //con valori presenti nel database se c'è match accedere       
+                //con valori presenti nel database se c'ï¿½ match accedere       
                 //senno mostrare un messaggio di errore
                 {
-                    id=dr2["id"].ToString();
-                    // attraverso il collegamento al serve go id non sarà quello autoincrement
-                    // ma sarà una stringa di 4 caratteri alfanumerici
+                    string id_random = await Richiestago();
+                    if(id_random.Equals(""))
+                    {
+                        MessageBox.Show("errore nel assegnazione del identificativo random attraverso il server go");
+                        flag=true;
+                        break;
+                    }
+                    else{
+                     id=dr2["id"].ToString();
+                     MessageBox.Show("il server go mi ha restituito questo id:"+id_random);
+                    // attraverso il collegamento al serve go id non sarï¿½ quello autoincrement
+                    // ma sarï¿½ una stringa di 4 caratteri alfanumerici
+                    //sqlQuerry = "UPDATE `utenti` SET `status`= 1,id_random='"+id_random+"' WHERE username='"+dr2["username"].ToString()+"'";
                     sqlQuerry = "UPDATE `utenti` SET `status`= 1 WHERE username='"+dr2["username"].ToString()+"'";
                     MySqlCommand cmd1=new MySqlCommand(sqlQuerry, Conn);
                     cmd1.ExecuteNonQuery();
                     flag = false; break;
+                    }
                 }
                 else
                 {
