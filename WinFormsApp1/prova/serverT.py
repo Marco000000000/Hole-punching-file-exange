@@ -12,17 +12,28 @@ class ClientThread(threading.Thread):
     def run(self):
         #quello commentato è per testare uno scampio usando un dizionario, caso in cui ci siano n client 1 e n client2
         message=self.client_socket.recv(1024).decode()
-        client_id,data = message.split(";",1) 
+        tipo,client_id,data = message.split(";") 
+        #tipo,client_id,data = message.split(";",1) 
+
+        #aggiungendo un tipo, "0"--> aggiunta / aggiornamento del dizionario 
+        #"1"--> richiesta dei dati legati alla chiave client_id passata, se non è oresente nel dizionario errore
+        # effettivamente per dividere le tipologie di interfacciamento per il server python, 
+        #si potresti stabile un ulteriore divisione
+        # ad esempio se iniza con 0 abbiamo un aggiunta/ aggiornamento dei dati 
+        #mentre se inizia con 1 si ha una richiesta dei dati  
        
        #si usa il ; come separatore tra identificativo e dati.
-        if client_id in self.server.data:
-            #se identificativo è nel dizionario allora invia i dati al client
+        if tipo=="0":
+            if client_id in self.server.data:
+                #se identificativo è nel dizionario allora invia i dati al client
+                self.server.data[client_id]=data
+                print("data aggiornati")
+            else:
+                print("Received data", data)
+                self.server.data[client_id]=data
+        else:
             self.client_socket.send(self.server.data[client_id].encode())
             print("data sent to client")
-        else:
-            print("Received data", data)
-            self.server.data[client_id]=data
-
         self.client_socket.close()    
          
        #in questo modo è esattamnte per due client. 

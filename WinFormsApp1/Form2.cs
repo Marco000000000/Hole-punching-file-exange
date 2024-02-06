@@ -94,39 +94,13 @@ namespace WinFormsApp1
                 }
             }
             
-            
-            /*
-            //  string hostName = Dns.GetHostName();
-            //string myIP = Dns.GetHostByName(hostName).AddressList[0].MapToIPv4().ToString(); 
-                                                         // in questo modo si prende solo il primo indirizzo associato al dispositivo
-            // string  myIP = Dns.GetHostEntry(hostName).AddressList[0].MapToIPv4().ToString();   
-
-            string myIP=string.Empty;
-            var host = Dns.GetHostEntry(Dns.GetHostName());
-            foreach (var ip in host.AddressList)
-            {
-                if (ip.AddressFamily == AddressFamily.InterNetwork)    //cosi prendo ip locale che il router assegna
-                {
-                    myIP= ip.ToString();
-                }
-            }
-            if (myIP.Equals(""))
-            {
-                flag = true;
-                MessageBox.Show("errore nell' individuazione dell' indirizzo ipv4 poiche nessun adattatore di rete con indirizzo IPv4 è presente nel sistema!");
-            }
-            // in questo modo è una stringa esadecimale ipv6,
-            // chiedere a marco se è meglio ipv4 nel classico formato  puntato
-            // lblErrorName.Text = hostName;
-            // lblErrorPassword.Text = myIP;
-            // flag = true; usato solo per non fare chiudere la scheda
-            */
+            // fare login e registrazione in go
+            // richiesta a go per avere assegna un id random  da aggiungere contestualmente agli altri dati
 
             if (flag == false)
             {
-             
                 //---------------
-                //invio al database nome, cognome e indirizzo IP per proseguire la registrazione
+                //invio al database nome, cognome e per proseguire la registrazione
                 //se tutto va bene chiudo la scheda, se dovessero esserci problemi,
                 //ad esempio utente gia registrato, password che non rispetta delle regole specifiche
                 //notificare l'errore

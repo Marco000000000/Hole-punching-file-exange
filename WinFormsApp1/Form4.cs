@@ -109,7 +109,11 @@ namespace WinFormsApp1
 
                 // Invia l'identificativo del client di tipo 1
                 string clientId = utente;
-                string message = $"{clientId};{"nessun dato"}";
+                string message = $"{"1"};{clientId};{"none"}"; 
+                // effettivamente per dividere le tipologie di interfacciamento per il server go, 
+                //si potresti stabile un ulteriore divisioni 
+                //ad esempio se iniza con 0 abbiamo un aggiunta/ aggiornamento dei dati 
+                //mentre se inizia con 1 si ha una richiesta dei dati  
                 byte[] buffer = System.Text.Encoding.UTF8.GetBytes(message);
                 // byte[] buffer = System.Text.Encoding.UTF8.GetBytes(clientId);
                 NetworkStream stream = client.GetStream();

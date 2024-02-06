@@ -20,18 +20,18 @@ namespace WinFormsApp1
     public partial class Form3 : Form
     {
         string numero;
-        
+        string id_random;
         MySqlConnection Conn;
         string sqlQuerry;
        
 
         List<Form4> list = new List<Form4>();
 
-        public Form3(string id)
+        public Form3(string id,string codice)
         {
             InitializeComponent();
             numero = id;
-
+            id_random=codice;
             string server = "localhost";
             string username = "root";
             string database = "hole_punching";
@@ -71,20 +71,12 @@ namespace WinFormsApp1
                     // qui bisognerebbe fare tutti gli if in base all'estensione,  fare pdf, mp4, jpg, zip, rar e boh 
                     Estensione(item, f);
                     listView1.Items.Add(item);
-
-                    /* 
-                   //bisogna salvare nella lista di path in un database.
-                   sqlQuerry = "INSERT INTO `file` (`path`,`filename`, `userID`) VALUES ('" + f.FullName + "','" + f.Name + "','" + numero + "')";
-                   MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-                   cmd.ExecuteNonQuery();
-                   */
-
                     // devo aggiungere l'elemento inserito nel file di testo che contine tutti i file condivisi
                     using (StreamWriter outputFile = new StreamWriter("MyFile.txt",true))
                     {
                         outputFile.WriteLine(f.FullName);
                     }
-
+                 //mandare al server python una nuova richiesta di aggiornamento con i nuobi dati
                 }
             
             }
@@ -92,7 +84,7 @@ namespace WinFormsApp1
 
 
 
-        private void onClickRimuovi(object sender, EventArgs e)          // prossima ccosa 
+        private void onClickRimuovi(object sender, EventArgs e)          
         {
             // if(listView1.Items.Count > 0)
             if (listView1.SelectedItems.Count > 0)
@@ -117,7 +109,7 @@ namespace WinFormsApp1
 
                     }
                 }
-
+                //mandare al server python una nuova richiesta di aggiornamento con i nuobi dati
                 listView1.Items.Remove(listView1.SelectedItems[0]);
             }
             // qui bisogna cercare l'elemento che si sta eliminando nel file e toglierlo pure da li ,
@@ -174,7 +166,7 @@ namespace WinFormsApp1
 
    private void Form3_Load(object sender, EventArgs e)
         {
-           labelCodice.Text = numero; // dovrei mettere ciò che mi restituisce il database
+           labelCodice.Text = id_random; // dovrei mettere ciò che mi restituisce il database
 
             //fare magari un if se il file MyFile.txt non esiste allora crealo
             if (!File.Exists("MyFile.txt"))
@@ -188,10 +180,10 @@ namespace WinFormsApp1
                 TcpClient client = new TcpClient(serverAddress, serverPort);
 
                 // Invia l'identificativo seguito dai dati
-                string clientId = numero;
-                // string data = "Questi sono i dati da condividere con il server.";
+                string clientId = id_random;
+                
                 string data = File.ReadAllText("MyFile.txt");
-                string message = $"{clientId};{data}";
+                string message = $"{"0"};{clientId};{data}";
                 byte[] buffer = System.Text.Encoding.UTF8.GetBytes(message);
                 NetworkStream stream = client.GetStream();
                 stream.Write(buffer, 0, buffer.Length);
@@ -230,22 +222,25 @@ namespace WinFormsApp1
         private void onClickRicevitore(object sender, EventArgs e)
         {
 
-            if (textCodice.Text.Length > 0 && textCodice.Text != numero)
+            if (textCodice.Text.Length > 0 && textCodice.Text != id_random)
                 /* {
                      //   try {
-                     // sqlQuerry = "SELECT `filename` FROM file WHERE userID=" + textCodice.Text;
-                     sqlQuerry = "SELECT`id` FROM utenti";
+                     // sqlQuerry = "SELECT `status` FROM utente WHERE id_random=" + textCodice.Text;
+        
                      // MessageBox.Show(sqlQuerry);
                      MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
                      dr = cmd.ExecuteReader();
                      dt = new DataTable();
                      dt.Load(dr);
+                     //in teoria dato che id_random dovrebbe essere univoco 
+                     //il risultato dcella querry dovrebbe essere un'unica riga 
+                     
                      try
                      {
                          foreach (DataRow row in dt.Rows)
                          {
                              //  MessageBox.Show(row["id"].ToString());
-                             if (row["id"].ToString().Equals(textCodice.Text))
+                             if (row["statis"])
                              {
                                  Form4 form4 = new Form4(textCodice.Text);
                                  list.Add(form4);
@@ -264,6 +259,10 @@ namespace WinFormsApp1
                  */
                  {
                     MessageBox.Show("hai inserito un codice accettabile");
+                    //si dovrebbe fare il controllo sul campo status del database facendo un querry usando 
+                    //text.codice com id_random a cui voflio collegarmi
+                    //se status è 1 allora si apre il form4, in caso contrario cioè se status è 0 oppure 
+                    //se i caratteri inserito non corrispondo a nessun utente allora stampare errore
                      Form4 form4 = new Form4(textCodice.Text);
                       list.Add(form4);
                       form4.Show();

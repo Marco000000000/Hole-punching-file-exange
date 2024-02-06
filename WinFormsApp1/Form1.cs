@@ -66,6 +66,7 @@ static async Task<string> Richiestago()
         {
             string id="default";
             bool flag = false;
+            string id_random="";
             DataTable dt = new DataTable();
             DataSet ds = new DataSet();
             MySqlDataReader dr;
@@ -85,7 +86,7 @@ static async Task<string> Richiestago()
                 //con valori presenti nel database se c'� match accedere       
                 //senno mostrare un messaggio di errore
                 {
-                    string id_random = await Richiestago();
+                    id_random = await Richiestago();
                     if(id_random.Equals(""))
                     {
                         MessageBox.Show("errore nel assegnazione del identificativo random attraverso il server go");
@@ -94,13 +95,16 @@ static async Task<string> Richiestago()
                     }
                     else{
                      id=dr2["id"].ToString();
+                     lblError.Text=""; // lo metto prima del messageBox in quanto prima 
+                                    //stoppava mostrando l'errore del primo confronto del foreach
                      MessageBox.Show("il server go mi ha restituito questo id:"+id_random);
                     // attraverso il collegamento al serve go id non sar� quello autoincrement
                     // ma sar� una stringa di 4 caratteri alfanumerici
-                    //sqlQuerry = "UPDATE `utenti` SET `status`= 1,id_random='"+id_random+"' WHERE username='"+dr2["username"].ToString()+"'";
-                    sqlQuerry = "UPDATE `utenti` SET `status`= 1 WHERE username='"+dr2["username"].ToString()+"'";
+                    sqlQuerry = "UPDATE `utenti` SET `status`= 1,id_random='"+id_random+"' WHERE username='"+dr2["username"].ToString()+"'";
+                    //sqlQuerry = "UPDATE `utenti` SET `status`= 1 WHERE username='"+dr2["username"].ToString()+"'";
                     MySqlCommand cmd1=new MySqlCommand(sqlQuerry, Conn);
                     cmd1.ExecuteNonQuery();
+                    
                     flag = false; break;
                     }
                 }
@@ -125,7 +129,7 @@ static async Task<string> Richiestago()
                 lblError.Text= string.Empty;
 
                 this.Visible = false;
-                Form3 form3 = new Form3(id);
+                Form3 form3 = new Form3(id,id_random);
                 form3.ShowDialog();
                
                 this.Visible = true;
