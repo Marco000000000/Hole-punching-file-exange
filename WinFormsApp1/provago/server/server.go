@@ -28,7 +28,7 @@ func generateRandomSequence() []int {
 	const sequenceLength = 4 //se voglio una sequenza di diversa lunguezza cambaire qui
 	randomSequence := make([]int, sequenceLength)
 	for i := 0; i < sequenceLength; i++ {
-		randomSequence[i] = rand.Intn(58) // Genera numeri casuali tra 0 e 58 in quanto le lettere
+		randomSequence[i] = rand.Intn(58) // Genera numeri casuali tra 0 e 58 in quanto le lettere 58
 		//tra maiuscole e minuscole sono codificate in 57 numeri
 		//ci sono sei caratteri non lettere cioè ' [ ] _ \ ^ bisogna trovare un modo per toglierli ? o vanno bene ?
 	}
@@ -39,7 +39,7 @@ func encodeSequence(sequence []int) string {
 	// Codifica la sequenza in caratteri ASCII
 	encoded := ""
 	for _, num := range sequence {
-		// Aggiungi il carattere corrispondente al numero (ASCII)
+		// Aggiungi il carattere corrispondente al numero (ASCII) 65
 		char := rune(num + 65) // 'A' per num=0, 'B' per num=1
 		//visto che num ha un valore tra 0 e 57 aggiungendo 65
 		//si entrerà nel range in cui sono codificate lettere maiscole e minuscole

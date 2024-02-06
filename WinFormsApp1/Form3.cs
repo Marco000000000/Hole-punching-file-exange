@@ -112,9 +112,6 @@ namespace WinFormsApp1
                 //mandare al server python una nuova richiesta di aggiornamento con i nuobi dati
                 listView1.Items.Remove(listView1.SelectedItems[0]);
             }
-            // qui bisogna cercare l'elemento che si sta eliminando nel file e toglierlo pure da li ,
-            // devo aprirlo sia in lettura che scrittura  e poi leggere tutte le righe del file
-            // confrontandi con il path selezionato per poi eliminare la riga dove si trova.
 
         }
 
@@ -188,7 +185,7 @@ namespace WinFormsApp1
                 NetworkStream stream = client.GetStream();
                 stream.Write(buffer, 0, buffer.Length);
                 client.Close();
-                       
+             //fare un metodo per l'invio dati che poi userò pure quando rimuovo/aggiungo un elemento   
 
 
             
@@ -223,14 +220,15 @@ namespace WinFormsApp1
         {
 
             if (textCodice.Text.Length > 0 && textCodice.Text != id_random)
-                /* {
-                     //   try {
-                     // sqlQuerry = "SELECT `status` FROM utente WHERE id_random=" + textCodice.Text;
+                 {
+                    
+                      DataTable dt = new DataTable();
+                      MySqlDataReader dr;
+                      sqlQuerry = "SELECT `id_random`,`status` FROM utenti WHERE id_random='" + textCodice.Text+"'";
         
                      // MessageBox.Show(sqlQuerry);
                      MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
                      dr = cmd.ExecuteReader();
-                     dt = new DataTable();
                      dt.Load(dr);
                      //in teoria dato che id_random dovrebbe essere univoco 
                      //il risultato dcella querry dovrebbe essere un'unica riga 
@@ -239,42 +237,52 @@ namespace WinFormsApp1
                      {
                          foreach (DataRow row in dt.Rows)
                          {
-                             //  MessageBox.Show(row["id"].ToString());
-                             if (row["statis"])
+                              // MessageBox.Show(row["status"].ToString());
+                             if ((bool)row["status"])
                              {
                                  Form4 form4 = new Form4(textCodice.Text);
                                  list.Add(form4);
                                  form4.Show();
                                  //form4.ShowDialog();
-                                 break;
+                                // break;
+                             }else{
+                                MessageBox.Show("utente non più connesso, farlo ricoleggare e inserire il nuovo codice");
                              }
                          }
                          textCodice.Text = string.Empty;
                      }
-                     catch (MySqlException ex) {MessageBox.Show(ex.Message); }
-                     dr.Close();
-                     dt.Clear();
-                 }
-                 else { textCodice.Text = string.Empty;  MessageBox.Show("inserisci un codice che non sia il tuo");}
-                 */
-                 {
-                    MessageBox.Show("hai inserito un codice accettabile");
+                     catch (MySqlException ex) 
+                     {
+                        MessageBox.Show(ex.Message); 
+                     }
+                    dr.Close();
+                    dt.Clear();
+                }
+
+             else if(textCodice.Text.Length > 0)
+             { 
+                textCodice.Text = string.Empty;  
+                MessageBox.Show("inserisci un codice che non sia il tuo");
+             }
+        
+         }        
+                   // MessageBox.Show("hai inserito un codice accettabile");
                     //si dovrebbe fare il controllo sul campo status del database facendo un querry usando 
                     //text.codice com id_random a cui voflio collegarmi
                     //se status è 1 allora si apre il form4, in caso contrario cioè se status è 0 oppure 
                     //se i caratteri inserito non corrispondo a nessun utente allora stampare errore
-                     Form4 form4 = new Form4(textCodice.Text);
-                      list.Add(form4);
-                      form4.Show();
-                 }
+                    // Form4 form4 = new Form4(textCodice.Text);
+                     // list.Add(form4);
+                    //  form4.Show();
+         
                   // devo fare in modo che il codice inserito sia mandato a go
-                                                                        // che dirà se corrisponderà a un id di un determinato utente,
-                                                                        // inoltre per poter far partire la richiesta esso deeve avere status uguale ad 1,
-                                                                        // se corrisponde si apre la finestra ricevitore di quel utente
-                                                                        // dopo che esso ha accettato la richiesta
+                    // che dirà se corrisponderà a un id di un determinato utente,
+                   // inoltre per poter far partire la richiesta esso deeve avere status uguale ad 1,
+                   // se corrisponde si apre la finestra ricevitore di quel utente
+                    // dopo che esso ha accettato la richiesta
                     // quindi ricapitolando in input stringa alfanumerica di 4 cifre mandando a go mi ritornerà id dell'utente corrispondente
                     // si fa la querry per vedere se ha status = 1 e se lo ha si avvia la richiesta per accedere alla sua schermata di condivisione
-        }
+        
 
         private void onClickVisualizza(object sender, EventArgs e)
         {

@@ -40,7 +40,7 @@ namespace WinFormsApp1
             
         }
 
-static async Task<string> Richiestago()
+static async Task<string> Richiestago(DataTable d)
     {
         // Indirizzo del server (assicurati che sia in ascolto)
         string serverURL = "http://localhost:8000";
@@ -52,6 +52,11 @@ static async Task<string> Richiestago()
         {
             // Effettua una richiesta GET al server
             string responseString = await client.GetStringAsync(serverURL);
+            foreach(DataRow dr3 in d.Rows){
+                //MessageBox.Show(dr3["id_random"].ToString());
+                if(dr3["id_random"].ToString().Equals(responseString))
+                   responseString=await Richiestago(d);
+            }
             return responseString;
         }
         catch (Exception ex)
@@ -68,11 +73,11 @@ static async Task<string> Richiestago()
             bool flag = false;
             string id_random="";
             DataTable dt = new DataTable();
-            DataSet ds = new DataSet();
+           // DataSet ds = new DataSet();
             MySqlDataReader dr;
 
             lblError.Text = string.Empty;
-            sqlQuerry = "SELECT `id`,`username`,`password` FROM utenti";
+            sqlQuerry = "SELECT `id`,`username`,`password`,`id_random` FROM utenti";
             MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
             dr = cmd.ExecuteReader();
             dt.Load(dr);
@@ -86,7 +91,10 @@ static async Task<string> Richiestago()
                 //con valori presenti nel database se c'� match accedere       
                 //senno mostrare un messaggio di errore
                 {
-                    id_random = await Richiestago();
+                    id_random = await Richiestago(dt);
+                    
+                    // dire di fare un querry per verificare se già un eleemnto 
+                    //nel database ha questo id random, se si richiamare nuovaemnte  Richiestago
                     if(id_random.Equals(""))
                     {
                         MessageBox.Show("errore nel assegnazione del identificativo random attraverso il server go");
@@ -115,7 +123,8 @@ static async Task<string> Richiestago()
                     
                 }
             }
-
+            dr.Close();
+            dt.Clear();
            if (textName.Text.Equals("") && textPassword.Text.Equals(""))
             {
                 lblError.Text = "Inserire le credenziali ";

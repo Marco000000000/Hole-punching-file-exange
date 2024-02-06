@@ -18,10 +18,8 @@ namespace WinFormsApp1
     {
         string utente;
         MySqlConnection Conn;
-        string sqlQuerry;
-        DataTable dt;
-     //  DataSet ds;
-        MySqlDataReader dr;
+        
+      
         
         public Form4(string id)
         {
@@ -31,7 +29,7 @@ namespace WinFormsApp1
             string server = "localhost";
             string username = "root";
             string database = "hole_punching";
-            dt = new DataTable();
+           
 
 
             try
@@ -142,30 +140,6 @@ namespace WinFormsApp1
                 client.Close();
                     
 
-            //---------------------
-           /*
-            sqlQuerry = "SELECT `path`,`filename` FROM file WHERE userID=" + utente;
-
-            MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-            dr = cmd.ExecuteReader();
-            dt.Load(dr);
-
-            foreach (DataRow dr2 in dt.Rows)
-            {
-                FileInfo f = new FileInfo(dr2["path"].ToString());
-                ListViewItem item = new ListViewItem(dr2["filename"].ToString());
-                item.SubItems.Add(f.FullName);
-
-                 Estensione(item, f);
-
-                listView2.Items.Add(item);
-
-            }
-
-            dr.Close();
-            dt.Clear();
-
-            */
         }
 
         private void onClickVisualizzazione(object sender, EventArgs e)
