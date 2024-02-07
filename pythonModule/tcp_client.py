@@ -299,10 +299,15 @@ class connector:
     def __handleHttpHearthBit__(self):
         while True:
             try:
-                response=requests.get("http://"+TURNSERVER+"/hearthBit/"+self.code)
-                data=response.json()
-                if "operation" in data:
-                    self.__handleTurnOperation__(data["path"],data["operation"],data["code"])
+                data={
+                "username":self.user,
+                "code":self.code,
+                }
+                response=requests.get("http://"+TURNSERVER+"/hearthBit",files=json.dumps(data))
+                response=response.json()
+                for data in response:
+                    if "operation" in data:
+                        self.__handleTurnOperation__(data["path"],data["operation"],data["code"])
             except:
                 print("exception in handle HTTP hearth bit")
 

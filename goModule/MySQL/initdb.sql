@@ -3,22 +3,14 @@ CREATE DATABASE IF NOT EXISTS db_holepunch;
 USE db_holepunch;
 
 CREATE TABLE IF NOT EXISTS users (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) UNIQUE NOT NULL,
+    username VARCHAR(255) PRIMARY KEY,
     password VARCHAR(255) NOT NULL,
     code VARCHAR(10) ,
+    last_hearthbit TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS files (
-	file_id INT UNSIGNED AUTO_INCREMENT,
-    file_name VARCHAR(255) NOT NULL,
-    partition_id INT UNSIGNED,
-    ready BOOL ,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (file_id,partition_id),
-    FOREIGN KEY (partition_id) REFERENCES partitions (id)
-);
+
 
 CREATE TABLE IF NOT EXISTS controller (
     id_controller INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
