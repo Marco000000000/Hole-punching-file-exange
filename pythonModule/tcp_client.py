@@ -321,7 +321,7 @@ class connector:
 
             
 
-    def __getPermission__(self):
+    def __getPermission__(self):#farla sempre come /request
         httpPort="80"
         print("http://"+TURNSERVER+":"+httpPort+"/holePunch/"+self.code)
         firstCall=requests.get("http://"+TURNSERVER+":"+httpPort+"/holePunch/"+self.code)
