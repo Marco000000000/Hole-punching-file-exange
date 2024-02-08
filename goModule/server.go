@@ -50,7 +50,7 @@ type Request struct {
 	Path          string `json:"path"`
 }
 type ForResponseData struct {
-	Channels   []*http.ResponseWriter
+	Channels   []http.ResponseWriter
 	Username   []string
 	Path       []string
 	Operations []int
@@ -63,8 +63,10 @@ type hearthBitMessage struct {
 
 var waitingRequests map[string]ForResponseData
 var waitingRequestsMutex sync.Mutex
-var sendedRequests map[string]*http.ResponseWriter
+var sendedRequests map[string]http.ResponseWriter
 var sendedRequestsMutex sync.Mutex
+var holeData map[string]string
+var holeMutex sync.Mutex
 
 func containsDangerousCharacters(s string) bool {
 	dangerousCharacters := []string{"'", ";", `"`, `\`, `%`, "&", "<", ">", "(", ")", "[", "]", "{", "}", "|", "*", "?", ":", "+", "-", "="}
@@ -252,7 +254,7 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 
 }
-func updateSendedRequests(tempmap map[string]*http.ResponseWriter) {
+func updateSendedRequests(tempmap map[string]http.ResponseWriter) {
 	sendedRequestsMutex.Lock()
 	for key, value := range tempmap {
 		sendedRequests[key] = value
@@ -325,7 +327,7 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if ok {
-			tempmap := map[string]*http.ResponseWriter{}
+			tempmap := map[string]http.ResponseWriter{}
 			response := []hearthBitMessage{}
 			for i, _ := range value.Operations {
 				code := encodeSequence(generateRandomSequence(20))
@@ -434,20 +436,43 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 	// Process query results
 	if rows.Next() && rows1.Next() {
+		holeMutex.Lock()
+
+		if request.Operation == 4 {
+			_, ok := holeData[request.Username+request.Code]
+			if ok {
+				response := map[string]string{"error": "server already full of requests"}
+				jsonResponse, err := json.Marshal(response)
+				if err != nil {
+					http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
+					return
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write(jsonResponse)
+				return
+			} else {
+				holeData[request.Username+request.Code] = request.Peer_username + request.Peer_code
+
+			}
+		}
+		holeMutex.Unlock()
 		waitingRequestsMutex.Lock()
 
 		_, ok := waitingRequests[request.Peer_username]
 		if ok == true {
 			tempData := waitingRequests[request.Username]
 			tempData.Operations = append(tempData.Operations, request.Operation)
-			tempData.Channels = append(tempData.Channels, &w)
+			tempData.Channels = append(tempData.Channels, w)
 			tempData.Path = append(tempData.Path, request.Path)
 			tempData.Username = append(tempData.Username, request.Username)
 			waitingRequests[request.Username] = tempData
 		} else {
 
-			tempData := ForResponseData{Channels: []*http.ResponseWriter{&w}, Username: []string{request.Username}, Path: []string{request.Path}, Operations: []int{request.Operation}}
+			tempData := ForResponseData{Channels: []http.ResponseWriter{w}, Username: []string{request.Username}, Path: []string{request.Path}, Operations: []int{request.Operation}}
 			waitingRequests[request.Peer_username] = tempData
+
 		}
 		waitingRequestsMutex.Unlock()
 
@@ -455,6 +480,47 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleResponse(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		return
+	}
+	path := r.URL.Path
+
+	// Split the path into segments
+	segments := strings.Split(path, "/")
+
+	// Get the last segment
+	lastSegment := segments[len(segments)-1]
+	// Close the request body
+	defer r.Body.Close()
+	sendedRequestsMutex.Lock()
+	channel, ok := sendedRequests[lastSegment]
+	if ok {
+		channel.WriteHeader(http.StatusOK)
+		channel.Write(body)
+		delete(sendedRequests, lastSegment)
+	} else {
+		response := map[string]string{"error": "no sequest sended"}
+		jsonResponse, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(jsonResponse)
+	}
+	sendedRequestsMutex.Unlock()
+	response := map[string]string{"error": "no sequest sended"}
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
 
 }
 
