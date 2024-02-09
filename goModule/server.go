@@ -621,6 +621,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	}
+	//controllare se è collegato
 	stmt, err := db.Prepare("SELECT * FROM users WHERE username = ? and code= ?")
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -719,6 +720,7 @@ func handleResponse(w http.ResponseWriter, r *http.Request) {
 		channel.WriteHeader(http.StatusOK)
 		channel.Write(body)
 		delete(sendedRequests, lastSegment)
+		return
 	} else {
 		response := map[string]string{"error": "no sequest sended"}
 		jsonResponse, err := json.Marshal(response)
@@ -731,7 +733,7 @@ func handleResponse(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 	}
 	sendedRequestsMutex.Unlock()
-	response := map[string]string{"error": "no sequest sended"}
+	response := map[string]string{"response": "ok"}
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)

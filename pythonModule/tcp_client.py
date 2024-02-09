@@ -168,7 +168,7 @@ class connector:
     
     def __handleFirstMessage__(self,s,role):
         if role == "server":
-            send_msg(s,json.dumps(self.get_all_files_in_directory(DOWNLOADPATH)).encode("utf-8"))
+            send_msg(s,json.dumps(self.get_all_files_in_directory(DOWNLOADPATH)).encode("utf-8"))#struttura di peppe
             return "Sent first message"
         else:
             return(json.loads(recv_msg(s).decode("utf-8")))
@@ -266,6 +266,7 @@ class connector:
                                 
                             elif self.operation == 3:
                                 print(self.__handleDirectoryFiles__(s,self.path,"client"))
+                                #return parameter
                                 self.operation=0
                         else:
                             self.__handleHearthBit__(s,"client")     
@@ -331,7 +332,10 @@ class connector:
             time.sleep(0.1)
             thread.start()
         elif operation==3:
-            requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.get_all_files_in_directory(path)))
+            if path=="/":
+                pass#ritornare first message
+            else:
+                requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.get_all_files_in_directory(path)))
         else:
             requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps({"error":"Bad Operation"}))
 
@@ -390,7 +394,7 @@ class connector:
                 "code":code,
                 "peer_username":peer_username,
                 "peer_code":peer_code,
-                "operation":operation,
+                "query":operation,
                 "path":path
             }
         if operation==1:
@@ -419,39 +423,53 @@ class connector:
 
 
 
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['POST'])
 def handleMessage():
     if request.remote_addr != '127.0.0.1':
         return "Forbidden: Only localhost connections are allowed.", 403
-
-    
-    query_type = request.args.get('query')
-    user=request.args.get('user')
-    code=request.args.get('code')
-    path=request.path
-    
+    data = request.json
+    query_type = data.query
+    user=data.username
+    code=data.code
+    # data={
+    #             "username":user,
+    #             "code":code,
+    #             "peer_username":peer_username,
+    #             "peer_code":peer_code,
+    #             "query":operation,
+    #             "path":[path]
+                
+    #         }
     global clientConnector
     global serverConnector
+    #tornare i path completi dalle operazioni
+    #creare risposta con i nomi delle cartelle durante l'holepunching(ans)
     if query_type=="download":
+        path=data.path
+
         if clientConnector is None:
             clientConnector=connector(user,code,"client")
-        peer_username=request.args.get('peer_username')
-        peer_code=request.args.get('peer_code','')
+        peer_username=data.peer_username
+        peer_code=data.peer_code
         if "." in path.split("/")[-1]:
             clientConnector.handleOperation(peer_username,peer_code,path,1)
+            #notificare cose brutte
         else:
             clientConnector.handleOperation(peer_username,peer_code,path,2)
     elif query_type=="names":
+        path=data.path#/
+
         if clientConnector is None:
             clientConnector=connector(user,code,"client")
-        peer_username=request.args.get('peer_username')
-        peer_code=request.args.get('peer_code','')
-        clientConnector.handleOperation(peer_username,peer_code,path,3)
+        peer_username=data.peer_username
+        peer_code=data.peer_code
+        return clientConnector.handleOperation(peer_username,peer_code,path,3)
     elif query_type=="start_share":
         if serverConnector is None:
             serverConnector=connector(user,code,"server")
             serverConnector.__startServer__()
-        
+            #ricevere path completi delle cartelle mettere in first message
+        #può anche risuccedere
     else:
         return jsonify({"error":"bad query"}),400
 
