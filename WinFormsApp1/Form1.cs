@@ -69,7 +69,7 @@ static async Task<string> Richiestago(DataTable d)
 
         private async void onClickLogin(object sender, EventArgs e)
         {
-            string id="default";
+           // string id="default";
             bool flag = false;
             string id_random="";
             DataTable dt = new DataTable();
@@ -77,58 +77,70 @@ static async Task<string> Richiestago(DataTable d)
             MySqlDataReader dr;
 
             lblError.Text = string.Empty;
-            sqlQuerry = "SELECT `id`,`username`,`password`,`id_random` FROM utenti";
+
+            if (textName.Text.Equals("") || textPassword.Text.Equals(""))
+            {
+                lblError.Text = "Inserire le credenziali ";
+                flag = true;
+            }else{
+
+            sqlQuerry = "SELECT `id`,`username`,`password`,`status`,`id_random` FROM utenti";
             MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
             dr = cmd.ExecuteReader();
             dt.Load(dr);
 
 
             foreach (DataRow dr2 in dt.Rows)
-            {
-                //da fare su go
-                if (textName.Text.Equals(dr2["username"].ToString()) && textPassword.Text.Equals(dr2["password"].ToString()))
-                //dovrei confrontare i valori inseriti
-                //con valori presenti nel database se c'� match accedere       
-                //senno mostrare un messaggio di errore
                 {
-                    id_random = await Richiestago(dt);
-                    
-                    // dire di fare un querry per verificare se già un eleemnto 
-                    //nel database ha questo id random, se si richiamare nuovaemnte  Richiestago
-                    if(id_random.Equals(""))
-                    {
-                        MessageBox.Show("errore nel assegnazione del identificativo random attraverso il server go");
-                        flag=true;
-                        break;
+                    //da fare su go
+                    if (textName.Text.Equals(dr2["username"].ToString()) && textPassword.Text.Equals(dr2["password"].ToString()))
+                    //dovrei confrontare i valori inseriti
+                    //con valori presenti nel database se c'� match accedere       
+                    //senno mostrare un messaggio di errore
+                    { 
+                        if(!(bool)dr2["status"])
+                        {
+                            id_random = await Richiestago(dt);
+                            
+                            // dire di fare un querry per verificare se già un eleemnto 
+                            //nel database ha questo id random, se si richiamare nuovaemnte  Richiestago
+                            if(id_random.Equals(""))
+                            {
+                                MessageBox.Show("errore nel assegnazione del identificativo random attraverso il server go");
+                                flag=true;
+                                break;
+                            }
+                            else
+                            {
+                           // id=dr2["id"].ToString(); //si può togliere 
+                            lblError.Text=""; // lo metto prima del messageBox in quanto prima 
+                                            //stoppava mostrando l'errore del primo confronto del foreach
+                          // MessageBox.Show("il server go mi ha restituito questo id:"+id_random);
+                            // attraverso il collegamento al serve go id non sar� quello autoincrement
+                            // ma sar� una stringa di 4 caratteri alfanumerici
+                            
+                            sqlQuerry = "UPDATE `utenti` SET `status`= 1,id_random='"+id_random+"' WHERE username='"+dr2["username"].ToString()+"'";
+                            //sqlQuerry = "UPDATE `utenti` SET `status`= 1 WHERE username='"+dr2["username"].ToString()+"'";
+                            MySqlCommand cmd1=new MySqlCommand(sqlQuerry, Conn);
+                            cmd1.ExecuteNonQuery();
+                            
+                            flag = false; break;
+                            }
+                        } 
+                        else{
+                            lblError.Text="";
+                            MessageBox.Show("utente già connessso");
+                            flag=true; break;
+                        }   
                     }
                     else{
-                     id=dr2["id"].ToString();
-                     lblError.Text=""; // lo metto prima del messageBox in quanto prima 
-                                    //stoppava mostrando l'errore del primo confronto del foreach
-                     MessageBox.Show("il server go mi ha restituito questo id:"+id_random);
-                    // attraverso il collegamento al serve go id non sar� quello autoincrement
-                    // ma sar� una stringa di 4 caratteri alfanumerici
-                    sqlQuerry = "UPDATE `utenti` SET `status`= 1,id_random='"+id_random+"' WHERE username='"+dr2["username"].ToString()+"'";
-                    //sqlQuerry = "UPDATE `utenti` SET `status`= 1 WHERE username='"+dr2["username"].ToString()+"'";
-                    MySqlCommand cmd1=new MySqlCommand(sqlQuerry, Conn);
-                    cmd1.ExecuteNonQuery();
-                    
-                    flag = false; break;
-                    }
+                    flag = true;   
+                    lblError.Text = "credenziali non valide, inserire le credenziali corrette"; 
+                    }    
                 }
-                else
-                {
-                    lblError.Text = "credenziali non valide, inserire le credenziali corrette";
-                    flag = true;
-                    
-                }
-            }
+                
             dr.Close();
             dt.Clear();
-           if (textName.Text.Equals("") && textPassword.Text.Equals(""))
-            {
-                lblError.Text = "Inserire le credenziali ";
-                flag = true;
             }
 
             if (!flag)
@@ -138,7 +150,7 @@ static async Task<string> Richiestago(DataTable d)
                 lblError.Text= string.Empty;
 
                 this.Visible = false;
-                Form3 form3 = new Form3(id,id_random);
+                Form3 form3 = new Form3(id_random); // si può togliere id
                 form3.ShowDialog();
                
                 this.Visible = true;
