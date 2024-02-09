@@ -49,7 +49,16 @@ class connector:
         
         sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    
+        data={
+                "username":self.user,
+                "code":self.code,
+                "peer_username":peer_username,
+                "peer_code":peer_code,
+                "operation":4,
+                "path":""
+            }
+        
+        send_msg(sa,json.dumps(data).encode("utf-8"))
         print(port)
         sa.connect((host, port))
         priv_addr = sa.getsockname()
