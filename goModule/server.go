@@ -752,8 +752,18 @@ func generateRandomSequence(sequenceLength int) []int {
 		randomSequence[i] = rand.Intn(58) // Genera numeri casuali tra 0 e 58 in quanto le lettere 58
 		//tra maiuscole e minuscole sono codificate in 57 numeri
 		//ci sono sei caratteri non lettere cioè ' [ ] _ \ ^ bisogna trovare un modo per toglierli ? o vanno bene ?
+		// sono i caratteri che vanno da 91 a 96
+		randomSequence[i] = checkNumber(randomSequence[i])
 	}
 	return randomSequence
+}
+
+func checkNumber(number int) int {
+	if number >= 26 && number <= 31 {
+		number = rand.Intn(58)
+		number = checkNumber(number)
+	}
+	return number
 }
 
 func encodeSequence(sequence []int) string {
