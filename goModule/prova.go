@@ -26,7 +26,7 @@ func handleConnection(conn net.Conn) {
 	}
 }
 
-func main() {
+func main1() {
 	host := "127.0.0.1"
 	port := 8080
 

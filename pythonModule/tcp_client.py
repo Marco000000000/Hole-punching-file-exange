@@ -49,7 +49,16 @@ class connector:
         
         sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    
+        data={
+                "username":self.user,
+                "code":self.code,
+                "peer_username":peer_username,
+                "peer_code":peer_code,
+                "operation":4,
+                "path":""
+            }
+        
+        send_msg(sa,json.dumps(data).encode("utf-8"))
         print(port)
         sa.connect((host, port))
         priv_addr = sa.getsockname()
@@ -318,7 +327,9 @@ class connector:
             requests.post("http://"+TURNSERVER+"/response/"+code, files=files)
         elif operation==4:
             requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps({"AcceptHole":True}))
-            self.__create_hole__()
+            thread=threading.Thread(self.__create_hole__())
+            time.sleep(0.1)
+            thread.start()
         elif operation==3:
             requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.get_all_files_in_directory(path)))
         else:
@@ -326,10 +337,18 @@ class connector:
 
             
 
-    def __getPermission__(self):#farla sempre come /request
+    def __getPermission__(self,peer_username,peer_code):#farla sempre come /request
         httpPort="80"
-        print("http://"+TURNSERVER+":"+httpPort+"/holePunch/"+self.code)
-        firstCall=requests.get("http://"+TURNSERVER+":"+httpPort+"/holePunch/"+self.code)
+        data={
+                "username":self.user,
+                "code":self.code,
+                "peer_username":peer_username,
+                "peer_code":peer_code,
+                "operation":4,
+                "path":""
+            }
+        print("http://"+TURNSERVER+":"+httpPort+"/request/")
+        firstCall=requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data),timeout=5)
         return firstCall.json
     
 
