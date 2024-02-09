@@ -784,6 +784,6 @@ func main() {
 	http.HandleFunc("/hearthBit", handleHearthBit)
 	http.HandleFunc("/request", handleRequest)
 	http.HandleFunc("/response", handleResponse)
-	fmt.Println("Server in ascolto su http://localhost:8000")
+	fmt.Println("Server in ascolto su http://localhost:80")
 	http.ListenAndServe(":80", nil)
 }
