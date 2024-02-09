@@ -19,7 +19,7 @@ namespace WinFormsApp1
 {
     public partial class Form3 : Form
     {
-        string numero;
+        //string numero;
         string id_random;
         MySqlConnection Conn;
         string sqlQuerry;
@@ -27,10 +27,10 @@ namespace WinFormsApp1
 
         List<Form4> list = new List<Form4>();
 
-        public Form3(string id,string codice)
+        public Form3(string codice)
         {
             InitializeComponent();
-            numero = id;
+            //numero = id;
             id_random=codice;
             string server = "localhost";
             string username = "root";
@@ -77,6 +77,7 @@ namespace WinFormsApp1
                         outputFile.WriteLine(f.FullName);
                     }
                  //mandare al server python una nuova richiesta di aggiornamento con i nuobi dati
+                    InvioDati(); 
                 }
             
             }
@@ -111,6 +112,7 @@ namespace WinFormsApp1
                 }
                 //mandare al server python una nuova richiesta di aggiornamento con i nuobi dati
                 listView1.Items.Remove(listView1.SelectedItems[0]);
+                InvioDati(); 
             }
 
         }
@@ -160,17 +162,7 @@ namespace WinFormsApp1
             }
 
         }
-
-   private void Form3_Load(object sender, EventArgs e)
-        {
-           labelCodice.Text = id_random; // dovrei mettere ciò che mi restituisce il database
-
-            //fare magari un if se il file MyFile.txt non esiste allora crealo
-            if (!File.Exists("MyFile.txt"))
-            {
-                using (StreamWriter sw = File.CreateText("MyFile.txt")) { }
-            }
-                    
+private void InvioDati(){
                 string serverAddress = "localhost";
                 int serverPort = 12345;
 
@@ -185,18 +177,24 @@ namespace WinFormsApp1
                 NetworkStream stream = client.GetStream();
                 stream.Write(buffer, 0, buffer.Length);
                 client.Close();
-             //fare un metodo per l'invio dati che poi userò pure quando rimuovo/aggiungo un elemento   
+}
+   private void Form3_Load(object sender, EventArgs e)
+        {
+           labelCodice.Text = id_random; // dovrei mettere ciò che mi restituisce il database
 
-
+            //fare magari un if se il file MyFile.txt non esiste allora crealo
+            if (!File.Exists("MyFile.txt"))
+            {
+                using (StreamWriter sw = File.CreateText("MyFile.txt")) { }
+            }
+            InvioDati(); 
             
            // ---------------
               // dovrei caricare  i precedenti file che l'utente rende disponivili
               // quindi apro questo file dove ho salvato le informazioni sul path
               // riempio la lista con le informazioni 
               // chiudo il file
-
-      
-            //_------------------------------------------------------
+        //_------------------------------------------------------
             // devo aprire il file dove ho conservato tutti i path dei mie elemmenti condivisi
             // leggere ogni riga ed aggiungere gli elementi alla list view
 
@@ -225,7 +223,7 @@ namespace WinFormsApp1
                       DataTable dt = new DataTable();
                       MySqlDataReader dr;
                       sqlQuerry = "SELECT `id_random`,`status` FROM utenti WHERE id_random='" + textCodice.Text+"'";
-        
+                        //problema se il codice random contiene ' 
                      // MessageBox.Show(sqlQuerry);
                      MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
                      dr = cmd.ExecuteReader();
@@ -243,8 +241,7 @@ namespace WinFormsApp1
                                  Form4 form4 = new Form4(textCodice.Text);
                                  list.Add(form4);
                                  form4.Show();
-                                 //form4.ShowDialog();
-                                // break;
+                                 
                              }else{
                                 MessageBox.Show("utente non più connesso, farlo ricoleggare e inserire il nuovo codice");
                              }
@@ -266,7 +263,7 @@ namespace WinFormsApp1
              }
         
          }        
-                   // MessageBox.Show("hai inserito un codice accettabile");
+    
                     //si dovrebbe fare il controllo sul campo status del database facendo un querry usando 
                     //text.codice com id_random a cui voflio collegarmi
                     //se status è 1 allora si apre il form4, in caso contrario cioè se status è 0 oppure 
@@ -328,7 +325,7 @@ namespace WinFormsApp1
                     f.Close();
                 }
 
-            sqlQuerry = "UPDATE `utenti` SET `status`= 0 WHERE id='" + numero + "'";
+            sqlQuerry = "UPDATE `utenti` SET `status`= 0 WHERE id_random='" + id_random + "'";  //qui si potrebbe fare su id random
             MySqlCommand cmd1 = new MySqlCommand(sqlQuerry, Conn);
             cmd1.ExecuteNonQuery();
           

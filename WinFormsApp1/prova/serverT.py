@@ -26,11 +26,11 @@ class ClientThread(threading.Thread):
         if tipo=="0":
             if client_id in self.server.data:
                 #se identificativo è nel dizionario allora invia i dati al client
-                self.server.data[client_id]=data
+                #self.server.data[client_id]=data
                 print("data aggiornati")
             else:
                 print("Received data", data)
-                self.server.data[client_id]=data
+            self.server.data[client_id]=data
         else:
             self.client_socket.send(self.server.data[client_id].encode())
             print("data sent to client")

@@ -47,6 +47,9 @@ namespace WinFormsApp1
 
         private void OnClickBottonRegister(object sender, EventArgs e)
         {
+            //bisogna togliere la querry al database perchè fatta da go, 
+            //devo fare la richiesta a go passando il nome e la password dopo aver fatto i controlli
+            //sulla forma lato client, stessa cosa nel form1 per un
             DataTable dt = new DataTable();
             DataSet ds = new DataSet();
             MySqlDataReader dr;
