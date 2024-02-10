@@ -397,13 +397,14 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 
 	// Close the request body
 	defer r.Body.Close()
-
 	var user UserLogin
 	err = json.Unmarshal(body, &user)
 	if err != nil {
 		http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
 		return
 	}
+	fmt.Println(user)
+
 	if containsDangerousCharacters(user.Username + user.Password) {
 		response := map[string]string{"error": "not allowed character"}
 		jsonResponse, err := json.Marshal(response)
@@ -417,8 +418,11 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	}
-
+	fmt.Println("containsDangerousCharacters")
+	fmt.Println(db)
 	stmt, err := db.Prepare("SELECT * FROM users WHERE username = ?")
+	fmt.Println(stmt)
+
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		fmt.Println("Error preparing statement:", err)
@@ -427,13 +431,14 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 	defer stmt.Close()
 
 	// Execute the query
-	rows, err := stmt.Query(user.Username, user.Password)
+	rows, err := stmt.Query(user.Username)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		fmt.Println("Error executing query:", err)
 		return
 	}
 	defer rows.Close()
+	fmt.Println("query")
 
 	// Process query results
 	if !rows.Next() {
@@ -461,7 +466,7 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	}
-	response := map[string]string{"error": "bad parameters"}
+	response := map[string]string{"error": "Username already in use"}
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
@@ -608,6 +613,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
 		return
 	}
+	fmt.Println(request)
 	if containsDangerousCharacters(request.Username+request.Code+request.Peer_code+request.Peer_username) || request.Operation < 0 || request.Operation > 4 || request.Operation == 2 {
 		response := map[string]string{"error": "not allowed character or operation"}
 		jsonResponse, err := json.Marshal(response)
@@ -695,10 +701,34 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 		}
 		waitingRequestsMutex.Unlock()
+		fmt.Println(waitingRequests)
 
+		// Write the status header to indicate a successful response
+		done := make(chan struct{})
+
+		go random(w, done)
+		select {
+		case <-done:
+			// Response writing completed
+		case <-time.After(10 * time.Second):
+			// Timeout occurred after 10 seconds
+			fmt.Println("Handler timeout occurred")
+		}
 	}
 }
+func random(w http.ResponseWriter, done chan struct{}) {
+	response := map[string]string{"error": "server already full of requests"}
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		http.Error((w), "Failed to create JSON response", http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("dentro")
 
+	w.Write(jsonResponse)
+	//close(done)
+
+}
 func handleResponse(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -778,19 +808,20 @@ func encodeSequence(sequence []int) string {
 	}
 	return encoded
 }
-
 func main() {
 	ipAddress := GetLocalIP()
 	fmt.Println(ipAddress)
 	go garbageCollector()
 	go handlerHolePunching(ipAddress.String(), 5000)
 	waitingRequests = make(map[string]ForResponseData)
-	db, err := sql.Open("mysql", "root:password@tcp(localhost:3306)/db_holepunch")
+	var err error
+
+	db, err = sql.Open("mysql", "root:password@tcp(localhost:3306)/db_holepunch")
 	if err != nil {
 		fmt.Println("Error connecting to database:", err)
 		return
 	}
-	defer db.Close()
+	fmt.Println("connected")
 	http.HandleFunc("/login", handleLogin)
 	http.HandleFunc("/signin", handleSignin)
 	http.HandleFunc("/hearthBit", handleHearthBit)

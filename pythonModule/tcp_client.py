@@ -13,7 +13,7 @@ import requests
 import base64
 from flask import Flask, request,jsonify
 app = Flask(__name__)
-if socket.SO_REUSEPORT is None:
+if not hasattr( socket,"SO_REUSEPORT") :
     socket.SO_REUSEPORT = socket.SO_REUSEADDR
 DOWNLOADPATH=os.getenv("downloadPath","download")
 DOWNLOADDIRECTORY=os.getenv("downloadDirectory","downloadDirectory")
@@ -29,6 +29,8 @@ class connector:
         self.user = user
         self.code = code
         self.role = role
+        self.ans=""
+        self.ansReady=False
         self.permission=False
         self.__mutex__=threading.Lock()
         self.holeCreated=False
@@ -38,6 +40,7 @@ class connector:
         self.STOP.clear()
         self.operation=0
         self.path=None
+        self.paths=[]
 
     def __create_hole__(self,host=TURNSERVER, port=5000,peer_username="",peer_code=""):
         if self.holeCreated:
@@ -168,7 +171,7 @@ class connector:
     
     def __handleFirstMessage__(self,s,role):
         if role == "server":
-            send_msg(s,json.dumps(self.get_all_files_in_directory(DOWNLOADPATH)).encode("utf-8"))#struttura di peppe
+            send_msg(s,json.dumps(self.paths).encode("utf-8"))#struttura di peppe
             return "Sent first message"
         else:
             return(json.loads(recv_msg(s).decode("utf-8")))
@@ -176,6 +179,14 @@ class connector:
         if operation>0 and operation<4:
             self.operation=operation
             self.path=path
+        while not self.ansReady:
+            time.sleep(1)
+        else:
+            ret=self.ans
+            self.ansReady=False
+            return ret
+        
+
     def __handleFileDownload__(self,s,path,role,subPath=""):
         if role == "server":
             with open(path, 'rb') as file:
@@ -248,7 +259,7 @@ class connector:
         finally:
             self.__mutex__.release()
         while True:
-            if type=="connect":
+            if role=="client":
                 while True:
                     try:
                         # path="download"
@@ -258,14 +269,19 @@ class connector:
                         if self.operation>0:
                             if self.operation==1:
                                 print(self.__handleFileDownload__(s,self.path,"client"))
+                                self.ans=True
+                                self.ansReady=True
                                 self.operation=0
                                 
                             elif self.operation == 2:
                                 print(self.__handleSincronizeDownload__(s,self.path,"client"))
+                                self.ans=True
+                                self.ansReady=True
                                 self.operation=0
                                 
                             elif self.operation == 3:
-                                print(self.__handleDirectoryFiles__(s,self.path,"client"))
+                                self.ans=self.__handleDirectoryFiles__(s,self.path,"client") 
+                                self.ansReady=True
                                 #return parameter
                                 self.operation=0
                         else:
@@ -333,13 +349,19 @@ class connector:
             thread.start()
         elif operation==3:
             if path=="/":
-                pass#ritornare first message
+                requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.paths))
+
             else:
-                requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.get_all_files_in_directory(path)))
+                if stringInsideAList(path,self.paths):
+                    requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.get_all_files_in_directory(path).keys()))
+                else:
+                    requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps({"error":"path not allowed"}))
+
         else:
             requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps({"error":"Bad Operation"}))
 
-            
+
+              
 
     def __getPermission__(self,peer_username,peer_code):#farla sempre come /request
         httpPort="80"
@@ -422,57 +444,68 @@ class connector:
         thread.start()
 
 
-
+def stringInsideAList(path,paths):
+    for temp in paths:
+        if temp in path:
+            return True
+    return False
 @app.route('/', methods=['POST'])
 def handleMessage():
     if request.remote_addr != '127.0.0.1':
-        return "Forbidden: Only localhost connections are allowed.", 403
-    data = request.json
-    query_type = data.query
-    user=data.username
-    code=data.code
-    # data={
-    #             "username":user,
-    #             "code":code,
-    #             "peer_username":peer_username,
-    #             "peer_code":peer_code,
-    #             "query":operation,
-    #             "path":[path]
-                
-    #         }
-    global clientConnector
-    global serverConnector
-    #tornare i path completi dalle operazioni
-    #creare risposta con i nomi delle cartelle durante l'holepunching(ans)
-    if query_type=="download":
-        path=data.path
+        return jsonify({"error":"Forbidden: Only localhost connections are allowed"}), 403
+    try:
+        data = request.json
+        query_type = data.query
+        user=data.username
+        code=data.code
+        # data={
+        #             "username":user,
+        #             "code":code,
+        #             "peer_username":peer_username,
+        #             "peer_code":peer_code,
+        #             "query":operation,
+        #             "path":[path]
+                    
+        #         }
+        global clientConnector
+        global serverConnector
+        #tornare i path completi dalle operazioni
+        #creare risposta con i nomi delle cartelle durante l'holepunching(ans)
+        if query_type=="download":
+            path=data.path
 
-        if clientConnector is None:
-            clientConnector=connector(user,code,"client")
-        peer_username=data.peer_username
-        peer_code=data.peer_code
-        if "." in path.split("/")[-1]:
-            clientConnector.handleOperation(peer_username,peer_code,path,1)
-            #notificare cose brutte
+            if clientConnector is None:
+                clientConnector=connector(user,code,"client")
+            peer_username=data.peer_username
+            peer_code=data.peer_code
+            if "." in path.split("/")[-1]:
+                return clientConnector.handleOperation(peer_username,peer_code,path,1)
+                #notificare cose brutte
+            else:
+                return clientConnector.handleOperation(peer_username,peer_code,path,2)
+        elif query_type=="names":
+            path=data.path#/
+
+            if clientConnector is None:
+                clientConnector=connector(user,code,"client")
+            peer_username=data.peer_username
+            peer_code=data.peer_code
+            return clientConnector.handleOperation(peer_username,peer_code,path,3)
+        elif query_type=="start_share":
+            path=data.path#/
+            if serverConnector is None:
+                serverConnector=connector(user,code,"server")
+                serverConnector.__startServer__()
+                #ricevere path completi delle cartelle mettere in first message
+            tempPaths=[]
+            for tempPath in path:
+                tempPaths.append(tempPath)
+            serverConnector.paths=tempPaths
+            #può anche risuccedere
         else:
-            clientConnector.handleOperation(peer_username,peer_code,path,2)
-    elif query_type=="names":
-        path=data.path#/
-
-        if clientConnector is None:
-            clientConnector=connector(user,code,"client")
-        peer_username=data.peer_username
-        peer_code=data.peer_code
-        return clientConnector.handleOperation(peer_username,peer_code,path,3)
-    elif query_type=="start_share":
-        if serverConnector is None:
-            serverConnector=connector(user,code,"server")
-            serverConnector.__startServer__()
-            #ricevere path completi delle cartelle mettere in first message
-        #può anche risuccedere
-    else:
-        return jsonify({"error":"bad query"}),400
-
+            return jsonify({"error":"bad query"}),400
+    except:
+        return jsonify({"error":"bad parameters"}),400
 clientConnector=None
 serverConnector=None
 
