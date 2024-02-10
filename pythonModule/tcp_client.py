@@ -17,7 +17,8 @@ if not hasattr( socket,"SO_REUSEPORT") :
     socket.SO_REUSEPORT = socket.SO_REUSEADDR
 DOWNLOADPATH=os.getenv("downloadPath","download")
 DOWNLOADDIRECTORY=os.getenv("downloadDirectory","downloadDirectory")
-TURNSERVER="37.102.123.139"
+TURNSERVER="localhost"
+HOLESERVER="192.168.1.64"
 if not os.path.exists(DOWNLOADDIRECTORY):
         # Create the directory
         os.makedirs(DOWNLOADDIRECTORY)
@@ -42,71 +43,77 @@ class connector:
         self.path=None
         self.paths=[]
 
-    def __create_hole__(self,host=TURNSERVER, port=5000,peer_username="",peer_code=""):
-        if self.holeCreated:
-            return True
-        elif self.HoleFailed:
-            return False
-        if self.role=="client":
-            self.__getPermission__(peer_username,peer_code)
+    def __create_hole__(self,host=HOLESERVER, port=5000,peer_username="",peer_code=""):
+        try:
+            if self.holeCreated:
+                return True
+            elif self.HoleFailed:
+                return False
+            if self.role=="client":
+                self.__getPermission__(peer_username,peer_code)
         
-        sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        data={
-                "username":self.user,
-                "code":self.code,
-                "peer_username":peer_username,
-                "peer_code":peer_code,
-                "operation":4,
-                "path":""
+            sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            data={
+                    "username":self.user,
+                    "code":self.code,
+                    "peer_username":peer_username,
+                    "peer_code":peer_code,
+                    "operation":4,
+                    "path":""
+                }
+            
+            print(port)
+            sa.connect((host, port))
+            send_msg(sa,json.dumps(data).encode("utf-8"))
+
+            priv_addr = sa.getsockname()
+            
+            send_msg(sa, addr_to_msg(priv_addr))
+            data = recv_msg(sa)
+            
+            print(data.decode("utf-8"))
+            logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
+            pub_addr = msg_to_addr(data)
+            print(pub_addr)
+            send_msg(sa, addr_to_msg(pub_addr))
+
+            data = recv_msg(sa)
+            print(data)
+            
+            pubdata, privdata = data.split(b'|')
+            client_pub_addr = msg_to_addr(pubdata)
+            client_priv_addr = msg_to_addr(privdata)
+            logger.info(
+                "client public is %s and private is %s, peer public is %s private is %s",
+                pub_addr, priv_addr, client_pub_addr, client_priv_addr,
+            )
+
+            threads = {
+                '0_accept': Thread(target=self.__accept__, args=(priv_addr[1],)),
+                '1_accept': Thread(target=self.__accept__, args=(pub_addr[1],)),
+                '2_connect': Thread(target=self.__connect__, args=(priv_addr, client_pub_addr,)),
+                '3_connect': Thread(target=self.__connect__, args=(priv_addr, client_priv_addr,)),
             }
-        
-        send_msg(sa,json.dumps(data).encode("utf-8"))
-        print(port)
-        sa.connect((host, port))
-        priv_addr = sa.getsockname()
-        
-        send_msg(sa, addr_to_msg(priv_addr))
-        data = recv_msg(sa)
-        print(data.decode("utf-8"))
-        logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
-        pub_addr = msg_to_addr(data)
-        send_msg(sa, addr_to_msg(pub_addr))
-
-        data = recv_msg(sa)
-        print(data)
-
-        pubdata, privdata = data.split(b'|')
-        client_pub_addr = msg_to_addr(pubdata)
-        client_priv_addr = msg_to_addr(privdata)
-        logger.info(
-            "client public is %s and private is %s, peer public is %s private is %s",
-            pub_addr, priv_addr, client_pub_addr, client_priv_addr,
-        )
-
-        threads = {
-            '0_accept': Thread(target=self.__accept__, args=(priv_addr[1],)),
-            '1_accept': Thread(target=self.__accept__, args=(pub_addr[1],)),
-            '2_connect': Thread(target=self.__connect__, args=(priv_addr, client_pub_addr,)),
-            '3_connect': Thread(target=self.__connect__, args=(priv_addr, client_priv_addr,)),
-        }
-        for name in sorted(threads.keys()):
-            logger.info('start thread %s', name)
-            threads[name].start()
-        timer=time.time()
-        while threads:
-            keys = list(threads.keys())
-            for name in keys:
-                try:
-                    threads[name].join(1)
-                except TimeoutError:
-                    continue
-                if not threads[name].is_alive():
-                    threads.pop(name)
-                if self.holeCreated:
-                    return True
-                
-        return False
+            for name in sorted(threads.keys()):
+                logger.info('start thread %s', name)
+                threads[name].start()
+            timer=time.time()
+            while threads:
+                keys = list(threads.keys())
+                for name in keys:
+                    try:
+                        threads[name].join(1)
+                    except TimeoutError:
+                        continue
+                    if not threads[name].is_alive():
+                        threads.pop(name)
+                    if self.holeCreated:
+                        return True
+                    
+            return False
+        except:
+            return False
     def __accept__(self,port):
         logger.info("accept %s", port)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -156,18 +163,21 @@ class connector:
                     continue
         else:
             logger.info("connected from %s to %s success!", local_addr, addr)
-    def get_all_files_in_directory(directory_path):
+    def get_all_files_in_directory(self,directory_path):
         file_names = {}
     
     # List all files in the directory
-        with os.scandir(directory_path) as entries:
-            for entry in entries:
-                if entry.is_file():
-                    file_names[entry.name]="file"#fare una lista
-                else:
-                    file_names[entry.name]="directory"
-                    
-        return file_names
+        try:
+            with os.scandir(directory_path) as entries:
+                for entry in entries:
+                    if entry.is_file():
+                        file_names[entry.name]="file"#fare una lista
+                    else:
+                        file_names[entry.name]="directory"
+                        
+            return file_names
+        except:
+            return {}
     
     def __handleFirstMessage__(self,s,role):
         if role == "server":
@@ -176,6 +186,7 @@ class connector:
         else:
             return(json.loads(recv_msg(s).decode("utf-8")))
     def __newClientOperation__(self,operation,path):
+        print("client operation")
         if operation>0 and operation<4:
             self.operation=operation
             self.path=path
@@ -324,41 +335,53 @@ class connector:
             
     def __handleHttpHearthBit__(self):
         while True:
-            try:
+            # try:
                 data={
                 "username":self.user,
                 "code":self.code,
                 }
-                response=requests.get("http://"+TURNSERVER+"/hearthBit",files=json.dumps(data))
+                response=requests.get("http://"+TURNSERVER+"/hearthBit",json=data)
                 response=response.json()
+                print(response)
                 for data in response:
                     if "operation" in data:
+                        print(data)
                         self.__handleTurnOperation__(data["path"],data["operation"],data["code"])
-            except:
-                print("exception in handle HTTP hearth bit")
+            # except:
+            #      print("exception in handle HTTP hearth bit")
+                time.sleep(2)
 
     def __handleTurnOperation__(self,path,operation,code):
         #inserire una get per l'accettazione
+        path=str(path)
         if operation==1: 
-            files = {path.split("/")[-1]: open(path, 'rb')}
-            requests.post("http://"+TURNSERVER+"/response/"+code, files=files)
+            if stringInsideAList(path,self.paths):
+
+                with open(path, 'rb') as file:
+                    file_data = file.read()
+                request=requests.post("http://"+TURNSERVER+"/response/"+code,data=file_data)
+                print(request.json)
+            else:
+                requests.post("http://"+TURNSERVER+"/response/"+code, json={"error":"path not allowed"})
+
         elif operation==4:
-            requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps({"AcceptHole":True}))
-            thread=threading.Thread(self.__create_hole__())
+            requests.post("http://"+TURNSERVER+"/response/"+code, json={"AcceptHole":True})
+            thread=threading.Thread(target=self.__create_hole__())
             time.sleep(0.1)
             thread.start()
         elif operation==3:
             if path=="/":
-                requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.paths))
+                requests.post("http://"+TURNSERVER+"/response/"+code, json=self.paths)
 
             else:
                 if stringInsideAList(path,self.paths):
-                    requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps(self.get_all_files_in_directory(path).keys()))
+                    print(path)
+                    requests.post("http://"+TURNSERVER+"/response/"+code, json=list((self.get_all_files_in_directory(path)).keys()))
                 else:
-                    requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps({"error":"path not allowed"}))
+                    requests.post("http://"+TURNSERVER+"/response/"+code, json={"error":"path not allowed"})
 
         else:
-            requests.post("http://"+TURNSERVER+"/response/"+code, files=json.dumps({"error":"Bad Operation"}))
+            requests.post("http://"+TURNSERVER+"/response/"+code, json={"error":"Bad Operation"})
 
 
               
@@ -374,41 +397,61 @@ class connector:
                 "path":""
             }
         print("http://"+TURNSERVER+":"+httpPort+"/request/")
-        firstCall=requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data),timeout=5)
+        firstCall=requests.post( "http://"+TURNSERVER+"/request", json=(data),timeout=5)
         return firstCall.json
     
 
     def __turnDownload__(self,data,subPath=""):
+        
         try:
-            response= requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data),timeout=60)
+            response= requests.post( "http://"+TURNSERVER+"/request", json=data,timeout=5)
+            print(response.text)
             with open(os.path.join( DOWNLOADDIRECTORY,subPath,data["path"].split(os.path.sep)[-1]), 'wb') as received_file:
+                print(response.content)
                 received_file.write(response.content)
-            return True
+            return "True"
         except:
-            return False
+            return "False"
 
     def __turnFilenames__(self,data):
-        response= requests.post( "http://"+TURNSERVER+"/request/", files=json.dumps(data),timeout=60)
-        return json.loads(response.content.decode("utf-8"))
+        response= requests.post( "http://"+TURNSERVER+"/request", json=data,timeout=5)
+        return response.json()
 
     def __turnSincronizeDirectory__(self,data,subPath=""):
             try:
+                datafile=data
+                datafile["query"]="names"
                 files=self.__turnFilenames__(data)
                 for file in files:
+
                     print("file:"+file)
                     print("is:"+files[file])
                     requestPath=os.path.join(data["path"],file)
                     print("requestPath:"+requestPath)
                     print("subPath:"+subPath)
-                    if files[file]=="file":
-                        print(self.__turnDownload__(data,subPath))
+                    if len(file.split("/"))>1:
+                        file=file.split("/")[-1]
+                        if "." in file:
+                            datadownload=data
+                            datadownload["path"]=datadownload["path"]+"/"+file
+                            print(self.__turnDownload__(data))
+                        else:
+                            os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
+                            print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
+                            self.__turnSincronizeDirectory__(data,os.path.join(subPath,file))
                     else:
-                        os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
-                        print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
-                        self.__turnSincronizeDirectory__(data,os.path.join(subPath,file))
-                return True
+                        file=file.split("\\")[-1]
+                        if "." in file:
+                            datadownload=data
+                            datadownload["path"]=datadownload["path"]+"\\"+file
+                            print(self.__turnDownload__(data))
+                        else:
+                            os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
+                            print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
+                            self.__turnSincronizeDirectory__(data,os.path.join(subPath,file))
+                return "True"
             except:
-                return False
+                return "False"
 
     def turnOperation(self,user,code,peer_username,peer_code,operation,path):
         data={
@@ -416,7 +459,7 @@ class connector:
                 "code":code,
                 "peer_username":peer_username,
                 "peer_code":peer_code,
-                "query":operation,
+                "operation":operation,
                 "path":path
             }
         if operation==1:
@@ -428,14 +471,17 @@ class connector:
         
 
     def handleOperation(self,peer_username,peer_code,path,operation):
+        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+
         if self.holeCreated:
+            print("hole")
             self.__newClientOperation__(operation,path)
         else:
             if self.__create_hole__(peer_username=peer_username,peer_code=peer_code):
                 self.__newClientOperation__(operation,path)
                 return True
             else:
-                return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+                print("handle"+str(operation))
             
 
 
@@ -453,59 +499,59 @@ def stringInsideAList(path,paths):
 def handleMessage():
     if request.remote_addr != '127.0.0.1':
         return jsonify({"error":"Forbidden: Only localhost connections are allowed"}), 403
-    try:
-        data = request.json
-        query_type = data.query
-        user=data.username
-        code=data.code
-        # data={
-        #             "username":user,
-        #             "code":code,
-        #             "peer_username":peer_username,
-        #             "peer_code":peer_code,
-        #             "query":operation,
-        #             "path":[path]
-                    
-        #         }
-        global clientConnector
-        global serverConnector
-        #tornare i path completi dalle operazioni
-        #creare risposta con i nomi delle cartelle durante l'holepunching(ans)
-        if query_type=="download":
-            path=data.path
 
-            if clientConnector is None:
-                clientConnector=connector(user,code,"client")
-            peer_username=data.peer_username
-            peer_code=data.peer_code
-            if "." in path.split("/")[-1]:
-                return clientConnector.handleOperation(peer_username,peer_code,path,1)
-                #notificare cose brutte
-            else:
-                return clientConnector.handleOperation(peer_username,peer_code,path,2)
-        elif query_type=="names":
-            path=data.path#/
+    data = request.json
+    print(data)
+    query_type = data["query"]
+    user=data["username"]
+    code=data["code"]
+    path=data["path"]
+    # data={
+    #             "username":user,
+    #             "code":code,
+    #             "peer_username":peer_username,
+    #             "peer_code":peer_code,
+    #             "query":operation,
+    #             "path":[path]
+                
+    #         }
+    global clientConnector
+    global serverConnector
+    #tornare i path completi dalle operazioni
+    #creare risposta con i nomi delle cartelle durante l'holepunching(ans)
+    if query_type=="download":
 
-            if clientConnector is None:
-                clientConnector=connector(user,code,"client")
-            peer_username=data.peer_username
-            peer_code=data.peer_code
-            return clientConnector.handleOperation(peer_username,peer_code,path,3)
-        elif query_type=="start_share":
-            path=data.path#/
-            if serverConnector is None:
-                serverConnector=connector(user,code,"server")
-                serverConnector.__startServer__()
-                #ricevere path completi delle cartelle mettere in first message
-            tempPaths=[]
-            for tempPath in path:
-                tempPaths.append(tempPath)
-            serverConnector.paths=tempPaths
-            #può anche risuccedere
+        if clientConnector is None:
+            clientConnector=connector(user,code,"client")
+        peer_username=data["peer_username"]
+        peer_code=data["peer_code"]
+        if "." in path.split("/")[-1]:
+            return clientConnector.handleOperation(peer_username,peer_code,path,1)
+            #notificare cose brutte
         else:
-            return jsonify({"error":"bad query"}),400
-    except:
-        return jsonify({"error":"bad parameters"}),400
+            return clientConnector.handleOperation(peer_username,peer_code,path,2)
+    elif query_type=="names":
+
+        if clientConnector is None:
+            clientConnector=connector(user,code,"client")
+        peer_username=data["peer_username"]
+        peer_code=data["peer_code"]
+        print("prima di handler")
+        return clientConnector.handleOperation(peer_username,peer_code,path,3)
+    elif query_type=="start_share":
+        if serverConnector is None:
+            serverConnector=connector(user,code,"server")
+            serverConnector.__startServer__()
+            #ricevere path completi delle cartelle mettere in first message
+        tempPaths=[]
+        for tempPath in path:
+            tempPaths.append(tempPath)
+        serverConnector.paths=tempPaths
+        #può anche risuccedere
+        return jsonify({"ok":tempPaths})
+    else:
+        return jsonify({"error":"bad query"}),400
+
 clientConnector=None
 serverConnector=None
 
@@ -514,4 +560,4 @@ if __name__ == '__main__':
     
     hostname = socket.gethostname()
 
-    app.run(debug=False,host=socket.gethostbyname_ex(hostname)[2][0],port=80,threaded=True)
+    app.run(debug=True,port=80,threaded=True)

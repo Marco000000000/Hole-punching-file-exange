@@ -35,6 +35,8 @@ def send_msg(sock, msg):
 def recvall(sock, n):
     # Helper function to recv n bytes or return None if EOF is hit
     data = b''
+    sock.settimeout(5)
+
     while len(data) < n:
         packet = sock.recv(n - len(data))
         if not packet:

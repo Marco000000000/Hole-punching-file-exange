@@ -44,18 +44,29 @@ type ForResponseData struct {
 	Username   []string
 	Path       []string
 	Operations []int
+	link       []chan struct{}
+	timer      []time.Time
 }
 type hearthBitMessage struct {
 	Code      string `json:"code"`
 	Operation int    `json:"operation"`
 	Path      string `json:"path"`
 }
+type connectHandler struct {
+	channel http.ResponseWriter
+	closer  chan struct{}
+	timer   time.Time
+}
+type timeAndString struct {
+	text  string
+	timer time.Time
+}
 
 var waitingRequests map[string]ForResponseData
 var waitingRequestsMutex sync.Mutex
-var sendedRequests map[string]http.ResponseWriter
+var sendedRequests map[string]connectHandler
 var sendedRequestsMutex sync.Mutex
-var holeData map[string]string
+var holeData map[string]timeAndString
 var holeMutex sync.Mutex
 
 type Client struct {
@@ -121,7 +132,7 @@ func HandleHoleConnect(conn net.Conn) {
 		clientsMutex.Unlock()
 		value, ok1 := holeData[request.Username+request.Code]
 
-		if ok1 || value == request.Peer_username+request.Peer_code {
+		if ok1 || value.text == request.Peer_username+request.Peer_code {
 			holeMutex.Lock()
 			delete(holeData, request.Username+request.Code)
 			holeMutex.Unlock()
@@ -478,8 +489,14 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 
 }
-func updateSendedRequests(tempmap map[string]http.ResponseWriter) {
+func updateSendedRequests(tempmap map[string]connectHandler) {
 	sendedRequestsMutex.Lock()
+	fmt.Println("updateSendedRequests")
+	fmt.Println(sendedRequests)
+	fmt.Println(tempmap)
+	if sendedRequests == nil {
+		sendedRequests = make(map[string]connectHandler) // Reinitialize the map
+	}
 	for key, value := range tempmap {
 		sendedRequests[key] = value
 	}
@@ -501,6 +518,7 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
 		return
 	}
+	// fmt.Println(user)
 	if containsDangerousCharacters(user.Username + user.Code) {
 		response := map[string]string{"error": "not allowed character"}
 		jsonResponse, err := json.Marshal(response)
@@ -518,7 +536,7 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 	stmt, err := db.Prepare("SELECT * FROM users WHERE username = ? and code= ?")
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
-		fmt.Println("Error preparing statement:", err)
+		// fmt.Println("Error preparing statement:", err)
 		return
 	}
 	defer stmt.Close()
@@ -527,15 +545,15 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 	rows, err := stmt.Query(user.Username, user.Code)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
-		fmt.Println("Error executing query:", err)
+		// fmt.Println("Error executing query:", err)
 		return
 	}
 	defer rows.Close()
-
+	// fmt.Println("query")
 	// Process query results
 	if rows.Next() {
 		waitingRequestsMutex.Lock()
-
+		// fmt.Println("waitingRequestsMutex.Lock()")
 		value, ok := waitingRequests[user.Username]
 		defer waitingRequestsMutex.Unlock()
 		stmt, err := db.Prepare("UPDATE users SET last_hearthbit = NOW() WHERE username = ?")
@@ -543,7 +561,7 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 			log.Fatal("Error preparing update statement:", err)
 		}
 		defer stmt.Close()
-
+		// fmt.Println("update query")
 		// Execute the update statement
 		_, err = stmt.Exec(user.Username)
 		if err != nil {
@@ -551,15 +569,18 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if ok {
-			tempmap := map[string]http.ResponseWriter{}
+			tempmap := map[string]connectHandler{}
 			response := []hearthBitMessage{}
 			for i := range value.Operations {
 				code := encodeSequence(generateRandomSequence(20))
 				response = append(response, hearthBitMessage{Code: code, Path: value.Path[i], Operation: value.Operations[i]})
-				tempmap[code] = value.Channels[i]
+				tempmap[code] = connectHandler{channel: value.Channels[i], closer: value.link[i], timer: time.Now()}
 			}
+			// fmt.Println("create tempmap")
+
 			delete(waitingRequests, user.Username)
 			go updateSendedRequests(tempmap)
+			// fmt.Println("after updateSendedRequests")
 			jsonResponse, err := json.Marshal(response)
 			if err != nil {
 				http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
@@ -627,6 +648,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 		return
 	}
+	fmt.Println("containsDangerousCharacters")
+
 	//controllare se è collegato
 	stmt, err := db.Prepare("SELECT * FROM users WHERE username = ? and code= ?")
 	if err != nil {
@@ -659,10 +682,12 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer rows1.Close()
+	fmt.Println("Database")
 
 	// Process query results
 	if rows.Next() && rows1.Next() {
 		holeMutex.Lock()
+		fmt.Println("holeMutex")
 
 		if request.Operation == 4 {
 			_, ok := holeData[request.Username+request.Code]
@@ -679,12 +704,14 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 				w.Write(jsonResponse)
 				return
 			} else {
-				holeData[request.Peer_username+request.Peer_code] = request.Username + request.Code
+				holeData[request.Peer_username+request.Peer_code] = timeAndString{text: request.Username + request.Code, timer: time.Now()}
 
 			}
 		}
 		holeMutex.Unlock()
+		done := make(chan struct{})
 		waitingRequestsMutex.Lock()
+		fmt.Println("waitingRequests")
 
 		_, ok := waitingRequests[request.Peer_username]
 		if ok {
@@ -693,10 +720,12 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 			tempData.Channels = append(tempData.Channels, w)
 			tempData.Path = append(tempData.Path, request.Path)
 			tempData.Username = append(tempData.Username, request.Username)
+			tempData.link = append(tempData.link, done)
+			tempData.timer = append(tempData.timer, time.Now())
 			waitingRequests[request.Username] = tempData
 		} else {
 
-			tempData := ForResponseData{Channels: []http.ResponseWriter{w}, Username: []string{request.Username}, Path: []string{request.Path}, Operations: []int{request.Operation}}
+			tempData := ForResponseData{Channels: []http.ResponseWriter{w}, link: []chan struct{}{done}, Username: []string{request.Username}, Path: []string{request.Path}, Operations: []int{request.Operation}, timer: []time.Time{time.Now()}}
 			waitingRequests[request.Peer_username] = tempData
 
 		}
@@ -704,9 +733,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(waitingRequests)
 
 		// Write the status header to indicate a successful response
-		done := make(chan struct{})
-
-		go random(w, done)
+		fmt.Printf("lissening")
 		select {
 		case <-done:
 			// Response writing completed
@@ -714,21 +741,19 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 			// Timeout occurred after 10 seconds
 			fmt.Println("Handler timeout occurred")
 		}
-	}
-}
-func random(w http.ResponseWriter, done chan struct{}) {
-	response := map[string]string{"error": "server already full of requests"}
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		http.Error((w), "Failed to create JSON response", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("dentro")
-
+	response := map[string]string{"error": "bad access data"}
+	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
-	//close(done)
-
 }
+
 func handleResponse(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -745,11 +770,19 @@ func handleResponse(w http.ResponseWriter, r *http.Request) {
 	// Close the request body
 	defer r.Body.Close()
 	sendedRequestsMutex.Lock()
-	channel, ok := sendedRequests[lastSegment]
+	w1, ok := sendedRequests[lastSegment]
+	fmt.Print("sendedRequests ")
+	fmt.Println(sendedRequests)
+
 	if ok {
-		channel.WriteHeader(http.StatusOK)
-		channel.Write(body)
+		w1.channel.WriteHeader(http.StatusOK)
+		w1.channel.Write(body)
+		fmt.Println(body)
+		close(w1.closer)
 		delete(sendedRequests, lastSegment)
+		sendedRequestsMutex.Unlock()
+
+		fmt.Println(sendedRequests)
 		return
 	} else {
 		response := map[string]string{"error": "no sequest sended"}
@@ -763,6 +796,7 @@ func handleResponse(w http.ResponseWriter, r *http.Request) {
 		w.Write(jsonResponse)
 	}
 	sendedRequestsMutex.Unlock()
+
 	response := map[string]string{"response": "ok"}
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
@@ -814,6 +848,8 @@ func main() {
 	go garbageCollector()
 	go handlerHolePunching(ipAddress.String(), 5000)
 	waitingRequests = make(map[string]ForResponseData)
+	sendedRequests = make(map[string]connectHandler)
+	holeData = make(map[string]timeAndString)
 	var err error
 
 	db, err = sql.Open("mysql", "root:password@tcp(localhost:3306)/db_holepunch")
@@ -826,7 +862,7 @@ func main() {
 	http.HandleFunc("/signin", handleSignin)
 	http.HandleFunc("/hearthBit", handleHearthBit)
 	http.HandleFunc("/request", handleRequest)
-	http.HandleFunc("/response", handleResponse)
+	http.HandleFunc("/response/", handleResponse)
 	fmt.Println("Server in ascolto su http://localhost:80")
 	http.ListenAndServe(":80", nil)
 }
