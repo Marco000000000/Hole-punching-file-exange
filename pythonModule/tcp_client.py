@@ -72,14 +72,14 @@ class connector:
             send_msg(sa, addr_to_msg(priv_addr))
             data = recv_msg(sa)
             
-            #print(data.decode("utf-8"))
+            print(data.decode("utf-8"))
             logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
             pub_addr = msg_to_addr(data)
-            #print(pub_addr)
+            print(pub_addr)
             send_msg(sa, addr_to_msg(pub_addr))
 
             data = recv_msg(sa)
-            #print(data)
+            print(data)
             
             pubdata, privdata = data.split(b'|')
             client_pub_addr = msg_to_addr(pubdata)
