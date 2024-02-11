@@ -121,12 +121,24 @@ func HandleHoleConnect(conn net.Conn) {
 		conn.Close()
 		return
 	}
+	fmt.Print("clients:")
+
 	fmt.Println(clients)
 	log.Printf("server - received data: %s", data)
 
 	clientsMutex.Lock()
 	log.Printf("number of clients: %d", len(clients))
-	connTime, ok := clients[request.Peer_username+request.Peer_code]
+	fmt.Println(request)
+	var connTime *Client
+	var ok bool
+
+	if request.Peer_username != "" {
+		connTime, ok = clients[request.Peer_username+request.Peer_code]
+	} else {
+		connTime, ok = clients[request.Username+request.Code]
+
+	}
+
 	if ok {
 		delete(clients, request.Peer_username+request.Peer_code)
 		clientsMutex.Unlock()

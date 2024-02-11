@@ -75,10 +75,13 @@ class connector:
             print(data.decode("utf-8"))
             logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
             pub_addr = msg_to_addr(data)
+            print("pub addr")
             print(pub_addr)
             send_msg(sa, addr_to_msg(pub_addr))
 
             data = recv_msg(sa)
+            print("all data")
+
             print(data)
             
             pubdata, privdata = data.split(b'|')
@@ -109,11 +112,11 @@ class connector:
                     if not threads[name].is_alive():
                         threads.pop(name)
                     if self.holeCreated:
-                        return True
+                        return "True"
                     
-            return False
+            return "False"
         except:
-            return False
+            return "False"
     def __accept__(self,port):
         logger.info("accept %s", port)
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -190,8 +193,11 @@ class connector:
         if operation>0 and operation<4:
             self.operation=operation
             self.path=path
+        else:
+            return "False"
         while not self.ansReady:
             time.sleep(1)
+            print("waiting"+str(self.ansReady))
         else:
             ret=self.ans
             self.ansReady=False
@@ -201,16 +207,21 @@ class connector:
     def __handleFileDownload__(self,s,path,role,subPath=""):
         if role == "server":
             with open(path, 'rb') as file:
-                file_data = file.read()
-                temp={}
-                temp["chunk"]=str(base64.b64encode(file_data),"UTF-8")
-                temp["last"]=file.tell()>0
+                while True:
+                    file_data = file.read()
+                    if(len(file_data)==0):
+                        break
+                    temp={}
+                    temp["chunk"]=str(base64.b64encode(file_data),"UTF-8")
+                    temp["last"]=False
+                    print(len(file_data))
+                    #print(temp)
 
-                #print(temp)
-
-                send_msg(s,json.dumps(temp).encode("utf-8"))
-            
-            return "Sent File"
+                    send_msg(s,json.dumps(temp).encode("utf-8"))
+            temp={}
+            temp["last"]="True"
+            send_msg(s,json.dumps(temp).encode("utf-8"))
+            return "SentFile"
         else:
             send_msg(s,(path+"?file").encode("utf-8"))
             #print(os.path.join( DOWNLOADDIRECTORY,subPath,path.split(os.path.sep)[-1]))
@@ -222,12 +233,17 @@ class connector:
                     a=recv_msg(s)
                     #print(a)
                     temp=json.loads(a.decode("utf-8"))
-                    #print(temp)
+                    print("templen:")
+                    print(len(temp))
 
-                    cond=not(temp['last'])
-                    file_data=file_data+base64.b64decode(temp["chunk"])
+                    if(len(temp)<2):
+                        break
+                    print(cond)
+                    time.sleep(1)
+                    file_data=base64.b64decode(temp["chunk"])
                     received_file.write(file_data)
-                    
+
+            print("finish download")  
             return "received File"
         
 
@@ -244,7 +260,7 @@ class connector:
             
             for file in files:
                 if file=="error":
-                    return False
+                    return s
                 #print("file:"+file)
                 #print("is:"+files[file])
                 requestPath=file
@@ -289,28 +305,32 @@ class connector:
                         # send_msg(s,"salve".encode("utf-8"))
                         # logger.info("inviato: %s","salve")
                         #print(self.__handleFirstMessage__(s,role))
+                        print(self.path)
                         if self.operation>0:
                             if self.operation==1:
-                                #print(self.__handleFileDownload__(s,self.path,"client"))
-                                self.ans=True
+                                print(self.__handleFileDownload__(s,self.path,role))
+                                self.ans="True"
                                 self.ansReady=True
+                                print(self.ansReady)
                                 self.operation=0
                                 
                             elif self.operation == 2:
-                                #print(self.__handleSincronizeDownload__(s,self.path,"client"))
-                                self.ans=True
+                                print(self.__handleSincronizeDownload__(s,self.path,role))
+                                self.ans="True"
                                 self.ansReady=True
                                 self.operation=0
                                 
                             elif self.operation == 3:
-                                self.ans=self.__handleDirectoryFiles__(s,self.path,"client") 
+                                self.ans=self.__handleDirectoryFiles__(s,self.path,role) 
                                 self.ansReady=True
                                 #return parameter
                                 self.operation=0
                         else:
-                            self.__handleHearthBit__(s,"client")     
-                    except:
+                            print(self.__handleHearthBit__(s,role))     
+                    except Exception as e:
+                        print((e))
                         self.__closeHole__()
+                        s.close()
                         return
 
                     time.sleep(1)
@@ -321,21 +341,25 @@ class connector:
                         msg=recv_msg(s)
                         msg=msg.decode("utf-8")
                         logger.info("ricevuto: %s",msg)
-                        if msg=="salve":
-                            print(self.__handleFirstMessage__(s,role)) 
-                        else:
-                            msg=msg.split("?")
-                            #print(msg)
-                            if len(msg)!=2:
-                                continue
-                            elif msg[1]=="file":
-                                print(self.__handleFileDownload__(s,msg[0],"server"))
-                            elif msg[1]=="directory":
-                                self.__handleDirectoryFiles__(s,msg[0],"server")
-                            elif msg[1]=="heartBit":
-                                self.__handleHearthBit__(s,"server")
-                    except:
+                    
+                        msg=msg.split("?")
+                        #print(msg)
+                        if len(msg)!=2:
+                            continue
+                        elif msg[1]=="file":
+                            print(self.__handleFileDownload__(s,msg[0],role))
+                        elif msg[1]=="directory":
+                            if msg[0]=="/":
+                                self.__handleFirstMessage__(s,role)
+                            else:
+                                self.__handleDirectoryFiles__(s,msg[0],role)
+                        elif msg[1]=="heartBit":
+                            self.__handleHearthBit__(s,role)
+                    except Exception as e:
+                        print((e))
                         self.__closeHole__()
+
+                        s.close()
                         return
                 
     def __closeHole__(self):
@@ -503,11 +527,10 @@ class connector:
     def handleOperation(self,peer_username,peer_code,path,operation):
         if self.holeCreated:
             #print("hole")
-            self.__newClientOperation__(operation,path)
+            return self.__newClientOperation__(operation,path)
         else:
             if self.__create_hole__(peer_username=peer_username,peer_code=peer_code):
-                self.__newClientOperation__(operation,path)
-                return True
+                return self.__newClientOperation__(operation,path)
             else:
                 print("handle"+str(operation))
                 return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
@@ -554,10 +577,13 @@ def handleMessage():
             clientConnector=connector(user,code,"client")
         peer_username=data["peer_username"]
         peer_code=data["peer_code"]
-        if "." in path.split("/")[-1]:
+        print("path: "+path.split(os.sep)[-1][0])
+
+        if "." in path.split(os.sep)[-1] and path.split(os.sep)[-1][0]!=".":
             return clientConnector.handleOperation(peer_username,peer_code,path,1)
             #notificare cose brutte
         else:
+
             return clientConnector.handleOperation(peer_username,peer_code,path,2)
     elif query_type=="names":
 
