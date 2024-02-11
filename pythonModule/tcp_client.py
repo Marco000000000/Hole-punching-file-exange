@@ -118,54 +118,57 @@ class connector:
         except:
             return "False"
     def __accept__(self,port):
-        logger.info("accept %s", port)
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        s.bind(('', port))
-        s.listen(1)
-        s.settimeout(5)
-        temp_timer=time.time()
-        while not self.STOP.is_set():
-            
-            try:
-                conn, addr = s.accept()
-                logger.info("Accept %s connected!", addr)
-                self.__makeThing__(conn,"accept",self.role)
-            except socket.timeout:
-                if self.holeCreated:
-                    return True
-                else:
-                    delta_time=time.time()-temp_timer
-                    if delta_time>self.maxTimeForHole:
+        try:
+            logger.info("accept %s", port)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            s.bind(('', port))
+            s.listen(1)
+            s.settimeout(5)
+            while not self.STOP.is_set():
+                
+                try:
+                    conn, addr = s.accept()
+                    logger.info("Accept %s connected!", addr)
+                    self.__makeThing__(conn,"accept",self.role)
+                except socket.timeout:
+                    if self.holeCreated:
+                        return True
+                    else:
                         return False
-                    continue
+                        
+        except Exception as e:
+            print(e)
+            return False 
 
     def __connect__(self,local_addr, addr):
-        logger.info("connect from %s to %s", local_addr, addr)
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        s.bind(local_addr)
-        temp_timer=time.time()
+        try:
+            logger.info("connect from %s to %s", local_addr, addr)
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            s.bind(local_addr)
 
-        while not self.STOP.is_set():
-            try:
-                s.connect(addr)
-                logger.info("connected from %s to %s success!", local_addr, addr)
+            while not self.STOP.is_set():
+                try:
+                    s.connect(addr)
+                    logger.info("connected from %s to %s success!", local_addr, addr)
 
-                self.__makeThing__(s,"connect",self.role)
-                self.STOP.set()
-            except socket.error:
-                if self.holeCreated:
-                    return True
-                else:
-                    delta_time=time.time()-temp_timer
-                    if delta_time>self.maxTimeForHole:
+                    self.__makeThing__(s,"connect",self.role)
+                    self.STOP.set()
+                except socket.error:
+                    if self.holeCreated:
+                        return True
+                    else:
                         return False
-                    continue
-        else:
-            logger.info("connected from %s to %s success!", local_addr, addr)
+            else:
+                logger.info("connected from %s to %s success!", local_addr, addr)
+        except Exception as e:
+            print(e)
+            return False
+
+
     def get_all_files_in_directory(self,directory_path):
         file_names = {}
     
@@ -195,7 +198,7 @@ class connector:
             self.path=path
         else:
             return "False"
-        while not self.ansReady:
+        while not self.ansReady and self.holeCreated:
             time.sleep(1)
             print("waiting"+str(self.ansReady))
         else:
