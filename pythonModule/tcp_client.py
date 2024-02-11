@@ -417,7 +417,7 @@ class connector:
         #print("subpath:")
         #print(subPath)
         try:
-            response= requests.post( "http://"+TURNSERVER+"/request", json=data,timeout=5)
+            response= requests.post( "http://"+TURNSERVER+"/request", json=data)
             #print(response.text)
             file=data["path"]
             if len(file.split("/"))>1:
@@ -434,7 +434,7 @@ class connector:
             return "False"
 
     def __turnFilenames__(self,data):
-        response= requests.post( "http://"+TURNSERVER+"/request", json=data,timeout=5)
+        response= requests.post( "http://"+TURNSERVER+"/request", json=data)
         return response.json()
 
     def __turnSincronizeDirectory__(self,data,subPath=""):
@@ -493,8 +493,6 @@ class connector:
         
 
     def handleOperation(self,peer_username,peer_code,path,operation):
-        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
-
         if self.holeCreated:
             #print("hole")
             self.__newClientOperation__(operation,path)
@@ -504,7 +502,8 @@ class connector:
                 return True
             else:
                 print("handle"+str(operation))
-            
+                return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+
 
 
     def __startServer__(self):
