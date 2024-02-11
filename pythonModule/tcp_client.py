@@ -261,6 +261,7 @@ class connector:
                 dirName=path.split("/")[-1]
             else:
                 dirName=path.split("\\")[-1]
+            print(os.path.join(DOWNLOADDIRECTORY,subPath,dirName))
             os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,dirName),exist_ok=True)
             print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,dirName))
             subPath=os.path.join(subPath,dirName)
@@ -268,18 +269,18 @@ class connector:
             for file in files:
                 if file=="error":
                     return s
-                #print("file:"+file)
-                #print("is:"+files[file])
+                print("file:"+file)
+                print("is:"+files[file])
                 requestPath=file
-                #print("requestPath:"+requestPath)
-                #print("subPath:"+subPath)
+                print("requestPath:"+requestPath)
+                print("subPath:"+subPath)
                 if files[file]=="file":
 
                     print(self.__handleFileDownload__(s,requestPath,role,subPath))
                 else:
                     #os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
                     #print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
-                    s=self.__handleSincronizeDownload__(s,requestPath,role,os.path.join(subPath,file))
+                    s=self.__handleSincronizeDownload__(s,requestPath,role,subPath)
             return s
         
     def __handleDirectoryFiles__(self,s,path,role):
@@ -537,7 +538,6 @@ class connector:
         
 
     def handleOperation(self,peer_username,peer_code,path,operation):
-        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
 
         if self.holeCreated:
             #print("hole")
@@ -547,6 +547,8 @@ class connector:
                 return self.__newClientOperation__(operation,path)
             else:
                 print("handle"+str(operation))
+                return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+
 
 
 
