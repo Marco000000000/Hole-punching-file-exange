@@ -243,6 +243,8 @@ class connector:
             subPath=os.path.join(subPath,dirName)
             
             for file in files:
+                if file=="error":
+                    return False
                 #print("file:"+file)
                 #print("is:"+files[file])
                 requestPath=file
@@ -358,8 +360,8 @@ class connector:
                         #print(data)
                         self.__handleTurnOperation__(data["path"],data["operation"],data["code"])
             except:
-                 #print("exception in handle HTTP hearth bit")
-                time.sleep(2)
+                print("exception in handle HTTP hearth bit")
+            time.sleep(2)
 
     def __handleTurnOperation__(self,path,operation,code):
         #inserire una get per l'accettazione
@@ -489,7 +491,10 @@ class connector:
         elif operation==2:
             return self.__turnSincronizeDirectory__(data)
         else:
-            return list(self.__turnFilenames__(data).keys())
+            temp=self.__turnFilenames__(data)
+            if type(temp) == list:
+                return temp
+            return list((temp).keys())
         
 
     def handleOperation(self,peer_username,peer_code,path,operation):
