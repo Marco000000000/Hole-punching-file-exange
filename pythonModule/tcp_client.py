@@ -63,7 +63,7 @@ class connector:
                     "path":""
                 }
             
-            print(port)
+            #print(port)
             sa.connect((host, port))
             send_msg(sa,json.dumps(data).encode("utf-8"))
 
@@ -72,14 +72,14 @@ class connector:
             send_msg(sa, addr_to_msg(priv_addr))
             data = recv_msg(sa)
             
-            print(data.decode("utf-8"))
+            #print(data.decode("utf-8"))
             logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
             pub_addr = msg_to_addr(data)
-            print(pub_addr)
+            #print(pub_addr)
             send_msg(sa, addr_to_msg(pub_addr))
 
             data = recv_msg(sa)
-            print(data)
+            #print(data)
             
             pubdata, privdata = data.split(b'|')
             client_pub_addr = msg_to_addr(pubdata)
@@ -171,9 +171,9 @@ class connector:
             with os.scandir(directory_path) as entries:
                 for entry in entries:
                     if entry.is_file():
-                        file_names[entry.name]="file"#fare una lista
+                        file_names[os.path.join(directory_path,entry.name)]="file"#fare una lista
                     else:
-                        file_names[entry.name]="directory"
+                        file_names[os.path.join(directory_path,entry.name)]="directory"
                         
             return file_names
         except:
@@ -186,7 +186,7 @@ class connector:
         else:
             return(json.loads(recv_msg(s).decode("utf-8")))
     def __newClientOperation__(self,operation,path):
-        print("client operation")
+        #print("client operation")
         if operation>0 and operation<4:
             self.operation=operation
             self.path=path
@@ -206,23 +206,23 @@ class connector:
                 temp["chunk"]=str(base64.b64encode(file_data),"UTF-8")
                 temp["last"]=file.tell()>0
 
-                print(temp)
+                #print(temp)
 
                 send_msg(s,json.dumps(temp).encode("utf-8"))
             
             return "Sent File"
         else:
             send_msg(s,(path+"?file").encode("utf-8"))
-            print(os.path.join( DOWNLOADDIRECTORY,subPath,path.split(os.path.sep)[-1]))
+            #print(os.path.join( DOWNLOADDIRECTORY,subPath,path.split(os.path.sep)[-1]))
 
             with open(os.path.join( DOWNLOADDIRECTORY,subPath,path.split(os.path.sep)[-1]), 'wb') as received_file:
                 file_data=b''
                 cond=True
                 while(cond):
                     a=recv_msg(s)
-                    print(a)
+                    #print(a)
                     temp=json.loads(a.decode("utf-8"))
-                    print(temp)
+                    #print(temp)
 
                     cond=not(temp['last'])
                     file_data=file_data+base64.b64decode(temp["chunk"])
@@ -233,17 +233,27 @@ class connector:
 
     def __handleSincronizeDownload__(self,s,path,role,subPath=""):
             files=self.__handleDirectoryFiles__(s,path,role)
+            
+            if len(path.split("/"))>1:
+                dirName=path.split("/")[-1]
+            else:
+                dirName=path.split("\\")[-1]
+            os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,dirName),exist_ok=True)
+            print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,dirName))
+            subPath=os.path.join(subPath,dirName)
+            
             for file in files:
-                print("file:"+file)
-                print("is:"+files[file])
-                requestPath=os.path.join(path,file)
-                print("requestPath:"+requestPath)
-                print("subPath:"+subPath)
+                #print("file:"+file)
+                #print("is:"+files[file])
+                requestPath=file
+                #print("requestPath:"+requestPath)
+                #print("subPath:"+subPath)
                 if files[file]=="file":
+
                     print(self.__handleFileDownload__(s,requestPath,role,subPath))
                 else:
-                    os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
-                    print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
+                    #os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
+                    #print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
                     s=self.__handleSincronizeDownload__(s,requestPath,role,os.path.join(subPath,file))
             return s
         
@@ -276,16 +286,16 @@ class connector:
                         # path="download"
                         # send_msg(s,"salve".encode("utf-8"))
                         # logger.info("inviato: %s","salve")
-                        print(self.__handleFirstMessage__(s,role))
+                        #print(self.__handleFirstMessage__(s,role))
                         if self.operation>0:
                             if self.operation==1:
-                                print(self.__handleFileDownload__(s,self.path,"client"))
+                                #print(self.__handleFileDownload__(s,self.path,"client"))
                                 self.ans=True
                                 self.ansReady=True
                                 self.operation=0
                                 
                             elif self.operation == 2:
-                                print(self.__handleSincronizeDownload__(s,self.path,"client"))
+                                #print(self.__handleSincronizeDownload__(s,self.path,"client"))
                                 self.ans=True
                                 self.ansReady=True
                                 self.operation=0
@@ -313,7 +323,7 @@ class connector:
                             print(self.__handleFirstMessage__(s,role)) 
                         else:
                             msg=msg.split("?")
-                            print(msg)
+                            #print(msg)
                             if len(msg)!=2:
                                 continue
                             elif msg[1]=="file":
@@ -335,20 +345,20 @@ class connector:
             
     def __handleHttpHearthBit__(self):
         while True:
-            # try:
+            try:
                 data={
                 "username":self.user,
                 "code":self.code,
                 }
                 response=requests.get("http://"+TURNSERVER+"/hearthBit",json=data)
                 response=response.json()
-                print(response)
+                print("hearthbit")
                 for data in response:
                     if "operation" in data:
-                        print(data)
+                        #print(data)
                         self.__handleTurnOperation__(data["path"],data["operation"],data["code"])
-            # except:
-            #      print("exception in handle HTTP hearth bit")
+            except:
+                 #print("exception in handle HTTP hearth bit")
                 time.sleep(2)
 
     def __handleTurnOperation__(self,path,operation,code):
@@ -360,7 +370,7 @@ class connector:
                 with open(path, 'rb') as file:
                     file_data = file.read()
                 request=requests.post("http://"+TURNSERVER+"/response/"+code,data=file_data)
-                print(request.json)
+                ##print(request.json)
             else:
                 requests.post("http://"+TURNSERVER+"/response/"+code, json={"error":"path not allowed"})
 
@@ -375,8 +385,8 @@ class connector:
 
             else:
                 if stringInsideAList(path,self.paths):
-                    print(path)
-                    requests.post("http://"+TURNSERVER+"/response/"+code, json=list((self.get_all_files_in_directory(path)).keys()))
+                    #print(path)
+                    requests.post("http://"+TURNSERVER+"/response/"+code, json=(self.get_all_files_in_directory(path)))
                 else:
                     requests.post("http://"+TURNSERVER+"/response/"+code, json={"error":"path not allowed"})
 
@@ -396,18 +406,28 @@ class connector:
                 "operation":4,
                 "path":""
             }
-        print("http://"+TURNSERVER+":"+httpPort+"/request/")
+        #print("http://"+TURNSERVER+":"+httpPort+"/request/")
         firstCall=requests.post( "http://"+TURNSERVER+"/request", json=(data),timeout=5)
         return firstCall.json
     
 
     def __turnDownload__(self,data,subPath=""):
-        
+        #print("Data:")
+        #print(data)
+        #print("subpath:")
+        #print(subPath)
         try:
             response= requests.post( "http://"+TURNSERVER+"/request", json=data,timeout=5)
-            print(response.text)
-            with open(os.path.join( DOWNLOADDIRECTORY,subPath,data["path"].split(os.path.sep)[-1]), 'wb') as received_file:
-                print(response.content)
+            #print(response.text)
+            file=data["path"]
+            if len(file.split("/"))>1:
+                fileName=file.split("/")[-1]
+            else:
+                fileName=file.split("\\")[-1]
+            #print("newPath:")
+            #print(os.path.join( DOWNLOADDIRECTORY,subPath,fileName))
+            with open(os.path.join( DOWNLOADDIRECTORY,subPath,fileName), 'wb') as received_file:
+                ##print(response.content)
                 received_file.write(response.content)
             return "True"
         except:
@@ -420,35 +440,37 @@ class connector:
     def __turnSincronizeDirectory__(self,data,subPath=""):
             try:
                 datafile=data
-                datafile["query"]="names"
-                files=self.__turnFilenames__(data)
+                datafile["operation"]=3
+                #print("data")
+                #print(data)
+                dirPath=data["path"]
+                if len(dirPath.split("/"))>1:
+                    dirName=dirPath.split("/")[-1]
+                else:
+                    dirName=dirPath.split("\\")[-1]
+                os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,dirName),exist_ok=True)
+                print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,dirName))
+                subPath=os.path.join(subPath,dirName)
+                files=self.__turnFilenames__(datafile)
+                print("files")
+                print(files)
                 for file in files:
 
                     print("file:"+file)
                     print("is:"+files[file])
-                    requestPath=os.path.join(data["path"],file)
+                    requestPath=file
                     print("requestPath:"+requestPath)
                     print("subPath:"+subPath)
-                    if len(file.split("/"))>1:
-                        file=file.split("/")[-1]
-                        if "." in file:
-                            datadownload=data
-                            datadownload["path"]=datadownload["path"]+"/"+file
-                            print(self.__turnDownload__(data))
-                        else:
-                            os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
-                            print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
-                            self.__turnSincronizeDirectory__(data,os.path.join(subPath,file))
+                    dataTemp=data
+                    dataTemp["path"]=file
+                    dataTemp["operation"]=1
+                    if files[file]=="file":
+                        
+                        print(self.__turnDownload__(dataTemp,subPath))
                     else:
-                        file=file.split("\\")[-1]
-                        if "." in file:
-                            datadownload=data
-                            datadownload["path"]=datadownload["path"]+"\\"+file
-                            print(self.__turnDownload__(data))
-                        else:
-                            os.makedirs(os.path.join(DOWNLOADDIRECTORY,subPath,file),exist_ok=True)
-                            print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
-                            self.__turnSincronizeDirectory__(data,os.path.join(subPath,file))
+                        print("dentro cose che non dovrebbe")
+                        print(dataTemp)
+                        self.__turnSincronizeDirectory__(dataTemp,subPath)
                 return "True"
             except:
                 return "False"
@@ -467,14 +489,14 @@ class connector:
         elif operation==2:
             return self.__turnSincronizeDirectory__(data)
         else:
-            return self.__turnFilenames__(data)
+            return list(self.__turnFilenames__(data).keys())
         
 
     def handleOperation(self,peer_username,peer_code,path,operation):
         return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
 
         if self.holeCreated:
-            print("hole")
+            #print("hole")
             self.__newClientOperation__(operation,path)
         else:
             if self.__create_hole__(peer_username=peer_username,peer_code=peer_code):
@@ -501,7 +523,7 @@ def handleMessage():
         return jsonify({"error":"Forbidden: Only localhost connections are allowed"}), 403
 
     data = request.json
-    print(data)
+    #print(data)
     query_type = data["query"]
     user=data["username"]
     code=data["code"]
@@ -536,7 +558,7 @@ def handleMessage():
             clientConnector=connector(user,code,"client")
         peer_username=data["peer_username"]
         peer_code=data["peer_code"]
-        print("prima di handler")
+        #print("prima di handler")
         return clientConnector.handleOperation(peer_username,peer_code,path,3)
     elif query_type=="start_share":
         if serverConnector is None:
@@ -560,4 +582,4 @@ if __name__ == '__main__':
     
     hostname = socket.gethostname()
 
-    app.run(debug=True,port=80,threaded=True)
+    app.run(debug=False,port=80,threaded=True)
