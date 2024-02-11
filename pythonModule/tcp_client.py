@@ -72,7 +72,6 @@ class connector:
             send_msg(sa, addr_to_msg(priv_addr))
             data = recv_msg(sa)
             
-            print(data.decode("utf-8"))
             logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
             pub_addr = msg_to_addr(data)
             print("pub addr")
@@ -190,7 +189,10 @@ class connector:
             send_msg(s,json.dumps(self.paths).encode("utf-8"))#struttura di peppe
             return "Sent first message"
         else:
-            return(json.loads(recv_msg(s).decode("utf-8")))
+            temp=recv_msg(s)
+            if temp is None:
+                return None
+            return(json.loads(temp.decode("utf-8")))
     def __newClientOperation__(self,operation,path):
         #print("client operation")
         if operation>0 and operation<4:
@@ -235,6 +237,8 @@ class connector:
                 while(cond):
                     a=recv_msg(s)
                     #print(a)
+                    if a is None:
+                        return "error in file download"
                     temp=json.loads(a.decode("utf-8"))
                     print("templen:")
                     print(len(temp))
@@ -284,7 +288,10 @@ class connector:
             return "Sent DirectoryFiles"
         else:
             send_msg(s,(path+"?directory").encode("utf-8"))
-            return(json.loads(recv_msg(s).decode("utf-8")))
+            temp=recv_msg(s)
+            if temp is None:
+                return None
+            return(json.loads(temp.decode("utf-8")))
 
     def __handleHearthBit__(self,s,role):
         if role == "server":
@@ -342,6 +349,8 @@ class connector:
                 while True:
                     try:
                         msg=recv_msg(s)
+                        if msg is None:
+                            return
                         msg=msg.decode("utf-8")
                         logger.info("ricevuto: %s",msg)
                     
@@ -528,6 +537,8 @@ class connector:
         
 
     def handleOperation(self,peer_username,peer_code,path,operation):
+        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+
         if self.holeCreated:
             #print("hole")
             return self.__newClientOperation__(operation,path)
@@ -536,7 +547,6 @@ class connector:
                 return self.__newClientOperation__(operation,path)
             else:
                 print("handle"+str(operation))
-                return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
 
 
 
