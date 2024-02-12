@@ -789,7 +789,7 @@ func handleResponse(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		w1.channel.WriteHeader(http.StatusOK)
 		w1.channel.Write(body)
-		fmt.Println(body)
+		//fmt.Println(body)
 		close(w1.closer)
 		delete(sendedRequests, lastSegment)
 		sendedRequestsMutex.Unlock()

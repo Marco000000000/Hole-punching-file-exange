@@ -551,7 +551,7 @@ class connector:
 
     def handleOperation(self,peer_username,peer_code,path,operation):
         #versione con il solo server
-        #return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
 
         if self.holeCreated:
             #print("hole")

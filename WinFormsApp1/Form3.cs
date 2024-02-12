@@ -24,7 +24,7 @@ namespace WinFormsApp1
         //string numero;
         string id_random;
         string username;
-        string serverURL = "http://localhost:81";
+        string serverURL = "http://127.0.0.1:80";
         List<Form4> list = new List<Form4>();
 
         public Form3(string codice, string nome)
@@ -245,19 +245,19 @@ private async void InvioDati(){
                 //dovrei avere in risposta una lista  passarla direttamnte al form4 per evitare 
                 //di fare un'ulteriore richiesta post li nella sua load.
                 string result = response.Content.ReadAsStringAsync().Result;
-                 MessageBox.Show(result);
-                //  dynamic obj = JsonConvert.DeserializeObject(result)??"nullo";
-                //     if (obj.error != null)
-                //     MessageBox.Show("si è verificato un errore " + obj.error);
-                //     if(obj.ok !=null){
-                //     MessageBox.Show("questo :"+obj.ok);
+                MessageBox.Show(result);
+                dynamic obj = JsonConvert.DeserializeObject(result)??"nullo";
+                // if (obj.error != null)
+                // MessageBox.Show("si è verificato un errore " + obj.error);
+                // if(obj.ok !=null){
+                // MessageBox.Show("questo :"+obj.ok);}
                  //capire se ha ok come chiave
 
                     // la risposta alla richiesta post deve essere 
                     //l'elenco dei path dell'utente con il codice e username scritti nei campi
-        //   List<string> lista1 = obj.ok.ToObject<List<string>>();
+                List<string> lista1 = obj.ToObject<List<string>>();
                     //funziona si come stringa che come string[]
-                    List<string>lista1= File.ReadAllLines("MyFile.txt").ToList();
+                    // List<string>lista1= File.ReadAllLines("MyFile.txt").ToList();
                      Form4 form4 = new Form4(username,id_random,textCodice.Text,textUserRicevitore.Text,lista1); 
                      //aggiungere come parametro la lista dei path se gia restituita dalla richiesta ?
                      list.Add(form4);

@@ -22,7 +22,7 @@ namespace WinFormsApp1
         string utente_peer;
         List<string> lista;
         List<Form4> listaForm = new List<Form4>();
-        string serverURL = "http://localhost:81";
+        string serverURL = "http://127.0.0.1:80";
 
 
         public Form4(string username, string id, string id_peer, string username_peer, List<string> elenco)
@@ -176,7 +176,7 @@ namespace WinFormsApp1
                 data["peer_username"] = utente_peer;
                 data["peer_code"] = codice_peer;
                 data["query"] = "download";
-                data["paths"] = listView2.SelectedItems[0].SubItems[1].Text.ToString();
+                data["path"] = listView2.SelectedItems[0].SubItems[1].Text.ToString();
 
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -239,15 +239,14 @@ namespace WinFormsApp1
                     // if (obj.ok != null)
                     //     MessageBox.Show("questo :" + obj.ok); //capire se ha ok come chiave
 
-            // //String[] lista1 = obj.ok.ToObject<string[]>();
-            // List<string> lista1 = obj.ok.ToObject<List<string>>();  
-            //     //devo vedere quale è la chiave perchè non è ok
-            // this.Visible = false;
-            // Form4 form4 = new Form4(utente, codice, codice_peer, utente_peer, lista1);
-            // listaForm.Add(form4);
-            // //aggiungere come parametro la lista dei path se gia restituita dalla richiesta ?
-            // form4.Show();
-            // this.Visible = true;
+            List<string> lista1 = obj.ToObject<List<string>>();  
+                //devo vedere quale è la chiave perchè non è ok
+            this.Visible = false;
+            Form4 form4 = new Form4(utente, codice, codice_peer, utente_peer, lista1);
+            listaForm.Add(form4);
+            //aggiungere come parametro la lista dei path se gia restituita dalla richiesta ?
+            form4.Show();
+            this.Visible = true;
 
                     // --> svuotare la listview corrente e riempirla con i nuovi file? 
                     //pero problema nel tornare indietro

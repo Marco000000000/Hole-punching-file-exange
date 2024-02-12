@@ -56,7 +56,7 @@ namespace WinFormsApp1
 
                     using HttpClient client = new HttpClient();
                     var response = await client.PostAsync(serverURL + "/login", data);
-                    //var response = await client.PostAsync("http://localhost:80/login", data);
+                    //var response = await client.PostAsync("http://127.0.0.1:80/login", data);
                     string result = response.Content.ReadAsStringAsync().Result;
                   //  MessageBox.Show(result);
                     try
