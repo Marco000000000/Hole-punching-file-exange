@@ -77,12 +77,12 @@ class connector:
             print("pub addr")
             print(pub_addr)
             send_msg(sa, addr_to_msg(pub_addr))
-
+            print("data = recv_msg(sa)")
             data = recv_msg(sa)
             print("all data")
 
             print(data)
-            
+            print("pubdata, privdata = data.split")
             pubdata, privdata = data.split(b'|')
             client_pub_addr = msg_to_addr(pubdata)
             client_priv_addr = msg_to_addr(privdata)
@@ -109,8 +109,11 @@ class connector:
                     except TimeoutError:
                         continue
                     if not threads[name].is_alive():
+                        print("112:threads.pop(name)")
+
                         threads.pop(name)
                     if self.holeCreated:
+                        print("116:self.holeCreated")
                         return "True"
                     
             return "False"
@@ -124,15 +127,18 @@ class connector:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             s.bind(('', port))
             s.listen(1)
+            print("130:s.settimeout(5)")
             s.settimeout(5)
             while not self.STOP.is_set():
                 
                 try:
+                    print("135:conn, addr = s.accept()")
                     conn, addr = s.accept()
                     logger.info("Accept %s connected!", addr)
                     self.__makeThing__(conn,"accept",self.role)
                 except socket.timeout:
                     if self.holeCreated:
+                        print("141:self.holeCreated")
                         return True
                     else:
                         return False
@@ -149,7 +155,7 @@ class connector:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             s.bind(local_addr)
-
+            print("158:while not self.STOP.is_set()")
             while not self.STOP.is_set():
                 try:
                     s.connect(addr)
@@ -159,6 +165,7 @@ class connector:
                     self.STOP.set()
                 except socket.error:
                     if self.holeCreated:
+                        print("168:self.holeCreated:")
                         return True
                     else:
                         return False
@@ -307,6 +314,7 @@ class connector:
     def __makeThing__(self,s,tipo,role):
         self.__mutex__.acquire()
         try:
+            print("317:self.holeCreated=True")
             self.holeCreated=True
         finally:
             self.__mutex__.release()

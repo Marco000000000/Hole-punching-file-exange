@@ -748,10 +748,10 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("lissening")
 		select {
 		case <-done:
-			// Response writing completed
-		case <-time.After(10 * time.Second):
-			// Timeout occurred after 10 seconds
-			fmt.Println("Handler timeout occurred")
+			// 	// Response writing completed
+			// case <-time.After(10 * time.Second):
+			// 	// Timeout occurred after 10 seconds
+			// 	fmt.Println("Handler timeout occurred")
 		}
 		return
 	}
