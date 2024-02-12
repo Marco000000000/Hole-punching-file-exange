@@ -379,6 +379,7 @@ class connector:
         self.__mutex__.acquire()
         try:
             self.holeCreated=False
+            self.HoleFailed=False
         finally:
             self.__mutex__.release()
             
@@ -538,6 +539,7 @@ class connector:
         
 
     def handleOperation(self,peer_username,peer_code,path,operation):
+        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
 
         if self.holeCreated:
             #print("hole")
@@ -547,7 +549,6 @@ class connector:
                 return self.__newClientOperation__(operation,path)
             else:
                 print("handle"+str(operation))
-                return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
 
 
 
