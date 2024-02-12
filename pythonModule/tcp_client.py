@@ -13,12 +13,11 @@ import requests
 import base64
 from flask import Flask, request,jsonify
 app = Flask(__name__)
-if not hasattr( socket,"SO_REUSEPORT") :
+if not hasattr( socket,"SO_REUSEPORT") :#dipende dai sistemi operativi
     socket.SO_REUSEPORT = socket.SO_REUSEADDR
-DOWNLOADPATH=os.getenv("downloadPath","download")
-DOWNLOADDIRECTORY=os.getenv("downloadDirectory","downloadDirectory")
-TURNSERVER="localhost"
-HOLESERVER="192.168.1.64"
+DOWNLOADDIRECTORY=os.getenv("downloadDirectory","../downloadDirectory")
+TURNSERVER="localhost" #server di gestione delle richieste di controllo e scambio messaggi tramite server
+HOLESERVER="localhost" #server gestore dello scambio degli indirizzi
 if not os.path.exists(DOWNLOADDIRECTORY):
         # Create the directory
         os.makedirs(DOWNLOADDIRECTORY)
@@ -26,29 +25,31 @@ logger = logging.getLogger('client')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 class connector:
+    #classe creata allo scopo di incampsulare le operazioni del nostro "protocollo"
     def __init__(self,user, code, role):#separare in classe Client e classe server
         self.user = user
         self.code = code
         self.role = role
         self.ans=""
         self.ansReady=False
-        self.permission=False
         self.__mutex__=threading.Lock()
         self.holeCreated=False
-        self.maxTimeForHole=5
-        self.HoleFailed=False
-        self.STOP = Event()
+        self.requestWithOutHole=0
+        self.STOP = Event()#cambiare
         self.STOP.clear()
         self.operation=0
         self.path=None
         self.paths=[]
 
+    #funzione che implementa l'algoritmo di hole punching tcp aggiungendo dei messaggi di controllo
+    #per l'ottenimento dei permessi dal server
     def __create_hole__(self,host=HOLESERVER, port=5000,peer_username="",peer_code=""):
         try:
             if self.holeCreated:
-                return True
-            elif self.HoleFailed:
-                return False
+                return "True"
+            if self.requestWithOutHole>0:
+                self.requestWithOutHole-=1
+                return "False"
             if self.role=="client":
                 self.__getPermission__(peer_username,peer_code)
         
@@ -90,7 +91,7 @@ class connector:
                 "client public is %s and private is %s, peer public is %s private is %s",
                 pub_addr, priv_addr, client_pub_addr, client_priv_addr,
             )
-
+            #lancio quattro thread per sopperire ad ogni possibile caso della connessione
             threads = {
                 '0_accept': Thread(target=self.__accept__, args=(priv_addr[1],)),
                 '1_accept': Thread(target=self.__accept__, args=(pub_addr[1],)),
@@ -100,7 +101,7 @@ class connector:
             for name in sorted(threads.keys()):
                 logger.info('start thread %s', name)
                 threads[name].start()
-            timer=time.time()
+            #aspetto che almeno un thread riesca e in caso contrario ritorno il fallimento
             while threads:
                 keys = list(threads.keys())
                 for name in keys:
@@ -115,10 +116,13 @@ class connector:
                     if self.holeCreated:
                         logger.info("116:self.holeCreated")
                         return "True"
-                    
+            #Operazione utilizzata per non avere continuo ritardo in caso di fallimento
+            self.requestWithOutHole=5
             return "False"
         except:
+            self.requestWithOutHole=5
             return "False"
+    #funzione che implementa l'accettazione  del primo messaggio
     def __accept__(self,port):
         try:
             logger.info("accept %s", port)
@@ -129,13 +133,13 @@ class connector:
             s.listen(1)
             logger.info("130:s.settimeout(5)")
             s.settimeout(5)
-            while not self.STOP.is_set():
+            while not self.STOP.is_set():#da rimuovere
                 
                 try:
                     logger.info("135:conn, addr = s.accept()")
                     conn, addr = s.accept()
                     logger.info("Accept %s connected!", addr)
-                    self.__makeThing__(conn,"accept",self.role)
+                    self.__handleHole__(conn,"accept",self.role)
                 except socket.timeout:
                     if self.holeCreated:
                         logger.info("141:self.holeCreated")
@@ -147,6 +151,7 @@ class connector:
             logger.info("funzione"+"__accept__")
             logger.info(e)
             return False 
+#funzione che implementa l'invio  del primo messaggio per l'hole punching
 
     def __connect__(self,local_addr, addr):
         try:
@@ -161,7 +166,7 @@ class connector:
                     s.connect(addr)
                     logger.info("connected from %s to %s success!", local_addr, addr)
 
-                    self.__makeThing__(s,"connect",self.role)
+                    self.__handleHole__(s,"connect",self.role)
                     self.STOP.set()
                 except socket.error:
                     if self.holeCreated:
@@ -176,7 +181,8 @@ class connector:
             logger.info(e)
             return False
 
-
+#funzione ausiliaria che ritorna un dizionario avente come chiavi i nomi dei file in un certo
+#path e come valore se è un file o una cartella
     def get_all_files_in_directory(self,directory_path):
         file_names = {}
     
@@ -192,16 +198,18 @@ class connector:
             return file_names
         except:
             return {}
-    
+    #gestisce l'invio del primo messaggio (serie di path names) o la ricezione degli stessi
     def __handleFirstMessage__(self,s,role):
         if role == "server":
-            send_msg(s,json.dumps(self.paths).encode("utf-8"))#struttura di peppe
+            send_msg(s,json.dumps(self.paths).encode("utf-8"))
             return "Sent first message"
         else:
             temp=recv_msg(s)
             if temp is None:
                 return None
             return(json.loads(temp.decode("utf-8")))
+    #funzione che cambia self.operation in connector per cambiare il comportamento del thread in 
+    # continuo polling durante l'hole punching
     def __newClientOperation__(self,operation,path):
         #print("client operation")
         if operation>0 and operation<4:
@@ -217,7 +225,7 @@ class connector:
             self.ansReady=False
             return ret
         
-
+    #gestrione del download di un singolo file
     def __handleFileDownload__(self,s,path,role,subPath=""):
         if role == "server":
             with open(path, 'rb') as file:
@@ -262,7 +270,7 @@ class connector:
             print("finish download")  
             return "received File"
         
-
+    #Sincronizzazione di un'intera cartella richiamando ricorsivamente __handleDirectoryFiles__ e __handleFileDownload__
     def __handleSincronizeDownload__(self,s,path,role,subPath=""):
             files=self.__handleDirectoryFiles__(s,path,role)
             
@@ -291,7 +299,7 @@ class connector:
                     #print("Create directory:"+os.path.join(DOWNLOADDIRECTORY,subPath,file))
                     s=self.__handleSincronizeDownload__(s,requestPath,role,subPath)
             return s
-        
+    #gestisce il ritorno di tutti i file sotto una cartella 
     def __handleDirectoryFiles__(self,s,path,role):
         if role == "server":
             send_msg(s,json.dumps(self.get_all_files_in_directory(path)).encode("utf-8"))
@@ -302,7 +310,7 @@ class connector:
             if temp is None:
                 return None
             return(json.loads(temp.decode("utf-8")))
-
+    #utilizzo di un messaggio vuoto per mantenere la connessione
     def __handleHearthBit__(self,s,role):
         if role == "server":
             send_msg(s,b'')
@@ -311,97 +319,104 @@ class connector:
             send_msg(s,("/"+"?heartBit").encode("utf-8"))
             return recv_msg(s)    
 
-    def __makeThing__(self,s,tipo,role):
+    #gestore della connessione dopo aver aperto la connessione con l'hole punching
+    def __handleHole__(self,s,tipo,role):
         self.__mutex__.acquire()
         try:
             logger.info("317:self.holeCreated=True")
             self.holeCreated=True
         finally:
             self.__mutex__.release()
-        while True:
-            if role=="client":
-                while True:
-                    try:
-                        # path="download"
-                        # send_msg(s,"salve".encode("utf-8"))
-                        # logger.info("inviato: %s","salve")
-                        #print(self.__handleFirstMessage__(s,role))
-                        print(self.path)
-                        if self.operation>0:
-                            if self.operation==1:
-                                print(self.__handleFileDownload__(s,self.path,role))
-                                self.ans="True"
-                                self.ansReady=True
-                                print(self.ansReady)
-                                self.operation=0
-                                
-                            elif self.operation == 2:
-                                print(self.__handleSincronizeDownload__(s,self.path,role))
-                                self.ans="True"
-                                self.ansReady=True
-                                self.operation=0
-                                
-                            elif self.operation == 3:
-                                temp=self.__handleDirectoryFiles__(s,self.path,role)
-                                if type(temp)==list:
-                                    self.ans=temp
-                                else:
-                                    self.ans=self.ans=list(temp.keys())
-                                
-                                self.ansReady=True
-                                #return parameter
-                                self.operation=0
-                        else:
-                            print(self.__handleHearthBit__(s,role))     
-                    except Exception as e:
-                        logger.info("funzione"+"makeThing parte client")
-
-                        logger.info((e))
+        if role=="client":
+            timer=time.time()
+            while True:
+                try:
+                    # path="download"
+                    # send_msg(s,"salve".encode("utf-8"))
+                    # logger.info("inviato: %s","salve")
+                    #print(self.__handleFirstMessage__(s,role))
+                    print(self.path)
+                    if time.time()-timer>60:
                         self.__closeHole__()
                         s.close()
                         return
-
-                    time.sleep(1)
-                    
-            else:
-                while True:
-                    try:
-                        msg=recv_msg(s)
-                        if msg is None:
-                            return
-                        msg=msg.decode("utf-8")
-                        logger.info("ricevuto: %s",msg)
-                    
-                        msg=msg.split("?")
-                        #print(msg)
-                        if len(msg)!=2:
-                            continue
-                        elif msg[1]=="file":
-                            print(self.__handleFileDownload__(s,msg[0],role))
-                        elif msg[1]=="directory":
-                            if msg[0]=="/":
-                                self.__handleFirstMessage__(s,role)
+                    if self.operation>0:
+                        timer=time.time()
+                        if self.operation==1:
+                            print(self.__handleFileDownload__(s,self.path,role))
+                            self.ans="True"
+                            self.ansReady=True
+                            print(self.ansReady)
+                            self.operation=0
+                            
+                        elif self.operation == 2:
+                            print(self.__handleSincronizeDownload__(s,self.path,role))
+                            self.ans="True"
+                            self.ansReady=True
+                            self.operation=0
+                            
+                        elif self.operation == 3:
+                            temp=self.__handleDirectoryFiles__(s,self.path,role)
+                            if type(temp)==list:
+                                self.ans=temp
                             else:
-                                self.__handleDirectoryFiles__(s,msg[0],role)
-                        elif msg[1]=="heartBit":
-                            self.__handleHearthBit__(s,role)
-                    except Exception as e:
-                        logger.info("funzione"+"makeThing parte server")
+                                self.ans=self.ans=list(temp.keys())
+                            
+                            self.ansReady=True
+                            #return parameter
+                            self.operation=0
+                    else:
+                        print(self.__handleHearthBit__(s,role))     
+                except Exception as e:
+                    logger.info("funzione"+"makeThing parte client")
 
-                        logger.info((e))
-                        self.__closeHole__()
+                    logger.info((e))
+                    self.__closeHole__()
+                    s.close()
+                    return
 
-                        s.close()
-                        return
+                time.sleep(1)
                 
+        else:
+            while True:
+                try:
+                    msg=recv_msg(s)
+                    if msg is None:
+                        return
+                    msg=msg.decode("utf-8")
+                    logger.info("ricevuto: %s",msg)
+                
+                    msg=msg.split("?")
+                    #print(msg)
+                    if len(msg)!=2:
+                        continue
+                    elif msg[1]=="file":
+                        print(self.__handleFileDownload__(s,msg[0],role))
+                    elif msg[1]=="directory":
+                        if msg[0]=="/":
+                            self.__handleFirstMessage__(s,role)
+                        else:
+                            self.__handleDirectoryFiles__(s,msg[0],role)
+                    elif msg[1]=="heartBit":
+                        self.__handleHearthBit__(s,role)
+                except Exception as e:
+                    logger.info("funzione"+"makeThing parte server")
+
+                    logger.info((e))
+                    self.__closeHole__()
+
+                    s.close()
+                    return
+    
+    #Chiudo l'hole punching
+            
     def __closeHole__(self):
         self.__mutex__.acquire()
         try:
             self.holeCreated=False
-            self.HoleFailed=False
         finally:
             self.__mutex__.release()
-            
+    #gestisce lato server lo stato di online e ritorna le richieste da smaltire       
     def __handleHttpHearthBit__(self):
         while True:
             try:
@@ -422,7 +437,7 @@ class connector:
 
 
             
-
+    #gestisce ogni tipo di operazione ricevuta in __handleHttpHearthBit__
     def __handleTurnOperation__(self,path,operation,code):
         #inserire una get per l'accettazione
         path=str(path)
@@ -457,7 +472,7 @@ class connector:
 
 
               
-
+    #funzione che richiede il permesso di poter eseguire l'hole punch
     def __getPermission__(self,peer_username,peer_code):#farla sempre come /request
         httpPort="80"
         data={
@@ -472,7 +487,7 @@ class connector:
         firstCall=requests.post( "http://"+TURNSERVER+"/request", json=(data),timeout=5)
         return firstCall.json
     
-
+    #richiesta di un file tramite server 
     def __turnDownload__(self,data,subPath=""):
         #print("Data:")
         #print(data)
@@ -494,10 +509,13 @@ class connector:
             return "True"
         except:
             return "False"
+   
+    #richiesta dei nomi dei file dentro una cartella tramite server 
 
     def __turnFilenames__(self,data):
         response= requests.post( "http://"+TURNSERVER+"/request", json=data)
         return response.json()
+    #richiesta di sincronizzazione dei file dentro una cartella tramite server 
 
     def __turnSincronizeDirectory__(self,data,subPath=""):
             try:
@@ -536,7 +554,7 @@ class connector:
                 return "True"
             except:
                 return "False"
-
+    #creazione della struttura dati da mandare al server go dalla richiesta ricevuta sul server locale flask
     def turnOperation(self,user,code,peer_username,peer_code,operation,path):
         data={
                 "username":user,
@@ -556,33 +574,39 @@ class connector:
                 return temp
             return list((temp).keys())
         
-
+    #gestisce il flusso e sceglie se passare l'operazione tramite il server o usando l'hole punch
     def handleOperation(self,peer_username,peer_code,path,operation):
         #versione con il solo server
         #return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
-
-        if self.holeCreated:
-            #print("hole")
-            return self.__newClientOperation__(operation,path)
-        else:
-            if self.__create_hole__(peer_username=peer_username,peer_code=peer_code):
+        logging.info("self.holeCreated=_%s",str(self.holeCreated))
+        try:
+            if self.holeCreated:
+                #print("hole")
                 return self.__newClientOperation__(operation,path)
             else:
-                print("handle"+str(operation))
-                return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+                if self.__create_hole__(peer_username=peer_username,peer_code=peer_code)=="True":
+                    return self.__newClientOperation__(operation,path)
+                else:
+                    logging.info("handle %s",str(operation))
+                    return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+        except:
+            logging.info("handle %s after exception",str(operation))
+
+            return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
 
 
-
+    #funzione che inizia il thread di gestione del server  
     def __startServer__(self):
         thread=threading.Thread(target=self.__handleHttpHearthBit__)
         thread.start()
 
-
+#funzione ausiliare per vedere se si sta richiedendo un path valido
 def stringInsideAList(path,paths):
     for temp in paths:
         if temp in path:
             return True
     return False
+#route di gestione messaggi dal frontend
 @app.route('/', methods=['POST'])
 def handleMessage():
     if request.remote_addr != '127.0.0.1':
@@ -617,7 +641,6 @@ def handleMessage():
 
         if "." in path.split(os.sep)[-1] and path.split(os.sep)[-1][0]!=".":
             return clientConnector.handleOperation(peer_username,peer_code,path,1)
-            #notificare cose brutte
         else:
 
             return clientConnector.handleOperation(peer_username,peer_code,path,2)
@@ -627,18 +650,15 @@ def handleMessage():
             clientConnector=connector(user,code,"client")
         peer_username=data["peer_username"]
         peer_code=data["peer_code"]
-        #print("prima di handler")
         return clientConnector.handleOperation(peer_username,peer_code,path,3)
     elif query_type=="start_share":
         if serverConnector is None:
             serverConnector=connector(user,code,"server")
             serverConnector.__startServer__()
-            #ricevere path completi delle cartelle mettere in first message
         tempPaths=[]
         for tempPath in path:
             tempPaths.append(tempPath)
         serverConnector.paths=tempPaths
-        #può anche risuccedere
         return jsonify({"ok":tempPaths})
     else:
         return jsonify({"error":"bad query"}),400

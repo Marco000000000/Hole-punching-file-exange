@@ -662,8 +662,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("containsDangerousCharacters")
 
-	//controllare se è collegato
-	stmt, err := db.Prepare("SELECT * FROM users WHERE username = ? and code= ?")
+	stmt, err := db.Prepare("SELECT * FROM users WHERE username = ? and code= ? and TIMESTAMPDIFF(SECOND, last_hearthbit, NOW()) < 10")
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		fmt.Println("Error preparing statement:", err)
