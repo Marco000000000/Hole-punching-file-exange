@@ -302,7 +302,7 @@ class connector:
             send_msg(s,("/"+"?heartBit").encode("utf-8"))
             return recv_msg(s)    
 
-    def __makeThing__(self,s,type,role):
+    def __makeThing__(self,s,tipo,role):
         self.__mutex__.acquire()
         try:
             self.holeCreated=True
@@ -332,7 +332,12 @@ class connector:
                                 self.operation=0
                                 
                             elif self.operation == 3:
-                                self.ans=list(self.__handleDirectoryFiles__(s,self.path,role).keys() )
+                                temp=self.__handleDirectoryFiles__(s,self.path,role)
+                                if type(temp)==list:
+                                    self.ans=temp
+                                else:
+                                    self.ans=self.ans=list(temp.keys())
+                                
                                 self.ansReady=True
                                 #return parameter
                                 self.operation=0
