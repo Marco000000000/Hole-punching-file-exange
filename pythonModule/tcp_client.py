@@ -74,15 +74,15 @@ class connector:
             
             logger.info("client %s %s - received data: %s", priv_addr[0], priv_addr[1], data)
             pub_addr = msg_to_addr(data)
-            print("pub addr")
+            logger.info("pub addr")
             print(pub_addr)
             send_msg(sa, addr_to_msg(pub_addr))
-            print("data = recv_msg(sa)")
+            logger.info("data = recv_msg(sa)")
             data = recv_msg(sa)
-            print("all data")
+            logger.info("all data")
 
             print(data)
-            print("pubdata, privdata = data.split")
+            logger.info("pubdata, privdata = data.split")
             pubdata, privdata = data.split(b'|')
             client_pub_addr = msg_to_addr(pubdata)
             client_priv_addr = msg_to_addr(privdata)
@@ -109,11 +109,11 @@ class connector:
                     except TimeoutError:
                         continue
                     if not threads[name].is_alive():
-                        print("112:threads.pop(name)")
+                        logger.info("112:threads.pop(name)")
 
                         threads.pop(name)
                     if self.holeCreated:
-                        print("116:self.holeCreated")
+                        logger.info("116:self.holeCreated")
                         return "True"
                     
             return "False"
@@ -127,25 +127,25 @@ class connector:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             s.bind(('', port))
             s.listen(1)
-            print("130:s.settimeout(5)")
+            logger.info("130:s.settimeout(5)")
             s.settimeout(5)
             while not self.STOP.is_set():
                 
                 try:
-                    print("135:conn, addr = s.accept()")
+                    logger.info("135:conn, addr = s.accept()")
                     conn, addr = s.accept()
                     logger.info("Accept %s connected!", addr)
                     self.__makeThing__(conn,"accept",self.role)
                 except socket.timeout:
                     if self.holeCreated:
-                        print("141:self.holeCreated")
+                        logger.info("141:self.holeCreated")
                         return True
                     else:
                         return False
                         
         except Exception as e:
-            print("funzione"+"__accept__")
-            print(e)
+            logger.info("funzione"+"__accept__")
+            logger.info(e)
             return False 
 
     def __connect__(self,local_addr, addr):
@@ -155,7 +155,7 @@ class connector:
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             s.bind(local_addr)
-            print("158:while not self.STOP.is_set()")
+            logger.info("158:while not self.STOP.is_set()")
             while not self.STOP.is_set():
                 try:
                     s.connect(addr)
@@ -165,15 +165,15 @@ class connector:
                     self.STOP.set()
                 except socket.error:
                     if self.holeCreated:
-                        print("168:self.holeCreated:")
+                        logger.info("168:self.holeCreated:")
                         return True
                     else:
                         return False
             else:
                 logger.info("connected from %s to %s success!", local_addr, addr)
         except Exception as e:
-            print("funzione"+"__connect__")
-            print(e)
+            logger.info("funzione"+"__connect__")
+            logger.info(e)
             return False
 
 
@@ -314,7 +314,7 @@ class connector:
     def __makeThing__(self,s,tipo,role):
         self.__mutex__.acquire()
         try:
-            print("317:self.holeCreated=True")
+            logger.info("317:self.holeCreated=True")
             self.holeCreated=True
         finally:
             self.__mutex__.release()
@@ -354,9 +354,9 @@ class connector:
                         else:
                             print(self.__handleHearthBit__(s,role))     
                     except Exception as e:
-                        print("funzione"+"makeThing parte client")
+                        logger.info("funzione"+"makeThing parte client")
 
-                        print((e))
+                        logger.info((e))
                         self.__closeHole__()
                         s.close()
                         return
@@ -386,9 +386,9 @@ class connector:
                         elif msg[1]=="heartBit":
                             self.__handleHearthBit__(s,role)
                     except Exception as e:
-                        print("funzione"+"makeThing parte server")
+                        logger.info("funzione"+"makeThing parte server")
 
-                        print((e))
+                        logger.info((e))
                         self.__closeHole__()
 
                         s.close()
@@ -559,7 +559,7 @@ class connector:
 
     def handleOperation(self,peer_username,peer_code,path,operation):
         #versione con il solo server
-        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+        #return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
 
         if self.holeCreated:
             #print("hole")
