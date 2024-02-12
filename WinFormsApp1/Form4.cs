@@ -22,7 +22,7 @@ namespace WinFormsApp1
         string utente_peer;
         List<string> lista;
         List<Form4> listaForm = new List<Form4>();
-        string serverURL = "http://127.0.0.1:80";
+        string serverURL = "http://localhost:81";
 
 
         public Form4(string username, string id, string id_peer, string username_peer, List<string> elenco)
@@ -239,6 +239,7 @@ namespace WinFormsApp1
                     // if (obj.ok != null)
                     //     MessageBox.Show("questo :" + obj.ok); //capire se ha ok come chiave
 
+            //String[] lista1 = obj.ok.ToObject<string[]>();
             List<string> lista1 = obj.ToObject<List<string>>();  
                 //devo vedere quale è la chiave perchè non è ok
             this.Visible = false;

@@ -19,7 +19,7 @@ namespace WinFormsApp1
 {
     public partial class Form2 : Form
     {
-        string serverURL = "http://localhost:80";
+        string serverURL = "151.74.146.179:80";
         public Form2()
         {
             InitializeComponent();
