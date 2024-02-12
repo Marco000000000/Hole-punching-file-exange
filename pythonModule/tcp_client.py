@@ -138,6 +138,7 @@ class connector:
                         return False
                         
         except Exception as e:
+            print("funzione"+"__accept__")
             print(e)
             return False 
 
@@ -164,6 +165,7 @@ class connector:
             else:
                 logger.info("connected from %s to %s success!", local_addr, addr)
         except Exception as e:
+            print("funzione"+"__connect__")
             print(e)
             return False
 
@@ -344,6 +346,8 @@ class connector:
                         else:
                             print(self.__handleHearthBit__(s,role))     
                     except Exception as e:
+                        print("funzione"+"makeThing parte client")
+
                         print((e))
                         self.__closeHole__()
                         s.close()
@@ -374,6 +378,8 @@ class connector:
                         elif msg[1]=="heartBit":
                             self.__handleHearthBit__(s,role)
                     except Exception as e:
+                        print("funzione"+"makeThing parte server")
+
                         print((e))
                         self.__closeHole__()
 
