@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "HTNIyB3K0OxXhQ5LOvKzncRJotrE2TILc83O4ZS+gTHEN37NNGvI4ZMm/AqIWAASl+kooeMV2e2zQz3WcfHqXQ==",
+  "dgSpecHash": "cXItGJEbTmt9iY+szZMhL69CAAbBZG9p3plo0zJwEIfi9CAoxDmjzDwuHdNs+hzjzndTTJwixYsSijWmKwupXA==",
   "success": true,
   "projectFilePath": "C:\\Users\\giuse\\OneDrive\\Documenti\\GitHub\\Hole-punching-file-exange\\WinFormsApp1\\WinFormsApp1.csproj",
   "expectedPackageFiles": [
@@ -13,6 +13,7 @@
     "C:\\Users\\giuse\\.nuget\\packages\\microsoft.netcore.targets\\1.1.0\\microsoft.netcore.targets.1.1.0.nupkg.sha512",
     "C:\\Users\\giuse\\.nuget\\packages\\microsoft.win32.systemevents\\4.7.0\\microsoft.win32.systemevents.4.7.0.nupkg.sha512",
     "C:\\Users\\giuse\\.nuget\\packages\\mysql.data\\8.3.0\\mysql.data.8.3.0.nupkg.sha512",
+    "C:\\Users\\giuse\\.nuget\\packages\\newtonsoft.json\\13.0.3\\newtonsoft.json.13.0.3.nupkg.sha512",
     "C:\\Users\\giuse\\.nuget\\packages\\system.buffers\\4.5.1\\system.buffers.4.5.1.nupkg.sha512",
     "C:\\Users\\giuse\\.nuget\\packages\\system.configuration.configurationmanager\\4.4.1\\system.configuration.configurationmanager.4.4.1.nupkg.sha512",
     "C:\\Users\\giuse\\.nuget\\packages\\system.diagnostics.diagnosticsource\\7.0.2\\system.diagnostics.diagnosticsource.7.0.2.nupkg.sha512",

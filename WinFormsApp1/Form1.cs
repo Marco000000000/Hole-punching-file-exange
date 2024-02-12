@@ -4,14 +4,14 @@ using System.Data;
 using MySql.Data.MySqlClient;
 using System.Net.Http;
 using System.Threading.Tasks;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace WinFormsApp1
 {
     public partial class Form1 : Form
     {
-        string sqlQuerry;
-        MySqlConnection Conn;
-
+        string serverURL = "http://localhost:80";
         public Form1()
         {
             InitializeComponent();
@@ -21,147 +21,77 @@ namespace WinFormsApp1
         {
             
             
-
-            string server = "localhost";
-            string username = "root";
-            string database = "hole_punching";
-
-            try { 
-            Conn = new MySqlConnection();
-            Conn.ConnectionString = "server=" + server + ";" + "user id=" + username + ";" + "database="+database;
-            Conn.Open();
-            MessageBox.Show("connessione eseguita");
-             
-            }
-            catch (MySqlException ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
             
         }
 
-static async Task<string> Richiestago(DataTable d)
-    {
-        // Indirizzo del server (assicurati che sia in ascolto)
-        string serverURL = "http://localhost:8000";
-
-        // Crea un oggetto HttpClient
-        var client = new HttpClient();
-
-        try
-        {
-            // Effettua una richiesta GET al server
-            string responseString = await client.GetStringAsync(serverURL);
-            foreach(DataRow dr3 in d.Rows){
-                //MessageBox.Show(dr3["id_random"].ToString());
-                if(dr3["id_random"].ToString().Equals(responseString))
-                   responseString=await Richiestago(d);
-            }
-            return responseString;
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(ex.Message);
-            return "";
-        }
-        
-    }
 
         private async void onClickLogin(object sender, EventArgs e)
         {
            // string id="default";
             bool flag = false;
-            string id_random="";
-            DataTable dt = new DataTable();
-           // DataSet ds = new DataSet();
-            MySqlDataReader dr;
-
+            string id_random;
+            var dati = new Dictionary<string, object>();
             lblError.Text = string.Empty;
 
             if (textName.Text.Equals("") || textPassword.Text.Equals(""))
             {
                 lblError.Text = "Inserire le credenziali ";
                 flag = true;
-            }else{
-
-            sqlQuerry = "SELECT `id`,`username`,`password`,`status`,`id_random` FROM utenti";
-            MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-            dr = cmd.ExecuteReader();
-            dt.Load(dr);
-
-
-            foreach (DataRow dr2 in dt.Rows)
-                {
-                    //da fare su go
-                    if (textName.Text.Equals(dr2["username"].ToString()) && textPassword.Text.Equals(dr2["password"].ToString()))
-                    //dovrei confrontare i valori inseriti
-                    //con valori presenti nel database se c'� match accedere       
-                    //senno mostrare un messaggio di errore
-                    { 
-                        if(!(bool)dr2["status"])
-                        {
-                            id_random = await Richiestago(dt);
-                            
-                            // dire di fare un querry per verificare se già un eleemnto 
-                            //nel database ha questo id random, se si richiamare nuovaemnte  Richiestago
-                            if(id_random.Equals(""))
-                            {
-                                MessageBox.Show("errore nel assegnazione del identificativo random attraverso il server go");
-                                flag=true;
-                                break;
-                            }
-                            else
-                            {
-                           // id=dr2["id"].ToString(); //si può togliere 
-                            lblError.Text=""; // lo metto prima del messageBox in quanto prima 
-                                            //stoppava mostrando l'errore del primo confronto del foreach
-                          // MessageBox.Show("il server go mi ha restituito questo id:"+id_random);
-                            // attraverso il collegamento al serve go id non sar� quello autoincrement
-                            // ma sar� una stringa di 4 caratteri alfanumerici
-                            
-                            sqlQuerry = "UPDATE `utenti` SET `status`= 1,id_random='"+id_random+"' WHERE username='"+dr2["username"].ToString()+"'";
-                            //sqlQuerry = "UPDATE `utenti` SET `status`= 1 WHERE username='"+dr2["username"].ToString()+"'";
-                            MySqlCommand cmd1=new MySqlCommand(sqlQuerry, Conn);
-                            cmd1.ExecuteNonQuery();
-                            
-                            flag = false; break;
-                            }
-                        } 
-                        else{
-                            lblError.Text="";
-                            MessageBox.Show("utente già connessso");
-                            flag=true; break;
-                        }   
-                    }
-                    else{
-                    flag = true;   
-                    lblError.Text = "credenziali non valide, inserire le credenziali corrette"; 
-                    }    
-                }
-                
-            dr.Close();
-            dt.Clear();
             }
 
             if (!flag)
             {
+              //  Form3 form3 = new Form3(id_random, textName.Text); 
+               // form3.Show();
+                dati["username"] = textName.Text;
+                dati["password"] = textPassword.Text;
                 textName.Text = string.Empty;
                 textPassword.Text = string.Empty;
                 lblError.Text= string.Empty;
 
-                this.Visible = false;
-                Form3 form3 = new Form3(id_random); // si può togliere id
-                form3.ShowDialog();
-               
-                this.Visible = true;
+                var json = JsonConvert.SerializeObject(dati);
+                var data = new StringContent(json, Encoding.UTF8, "application/json");
+                try
+                {
 
-                //bisognerebbe togliere il form di accesso ma se lo chiudo viene chiuso tutto
-                //e se lo nascondo rimane aperto come processo in backgrounf
+                    using HttpClient client = new HttpClient();
+                    var response = await client.PostAsync(serverURL + "/login", data);
+                    //var response = await client.PostAsync("http://localhost:80/login", data);
+                    string result = response.Content.ReadAsStringAsync().Result;
+                  //  MessageBox.Show(result);
+                    try
+                    {
+                        dynamic obj = JsonConvert.DeserializeObject(result)??"nullo";
+                            if (obj.error != null)
+                                MessageBox.Show("si è verificato un errore " + obj.error);
+                            else if (obj.code != null)
+                            {
+                                MessageBox.Show("il codice di risposta: " + obj.code);
+                                id_random=obj.code;
+                                this.Visible = false;
+                                Form3 form3 = new Form3(id_random, (string)dati["username"]); 
+                                form3.ShowDialog();
+                                this.Visible = true;
+                            //se tutto va bene invio le credeziali per poter eseguire l'accesso
+                            //se esistono chiudo la schede e ne apro una relativa a trasmissione 
+                        }
+                        else
+                                MessageBox.Show("risposta inaspettata dal server");
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Si è verificato un errore con la deserializzazione: {ex.Message}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Si è verificato un errore: {ex.Message}");
+                }
 
+
+            
             }
-            //se tutto va bene invio le credeziali per poter eseguire l'accesso
-            //se esistono chiudo la schede e ne apro una relativa a trasmissione 
-
+           
 
         }
        
@@ -170,7 +100,6 @@ static async Task<string> Richiestago(DataTable d)
         {
             Form2 form2 = new Form2();
             form2.ShowDialog();
-            // form2.Activate();
 
         }
 
