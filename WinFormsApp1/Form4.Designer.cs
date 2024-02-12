@@ -39,6 +39,7 @@
             label2 = new Label();
             buttonVisualizzazione1 = new Button();
             labelCodiceR = new Label();
+            buttonIndietro = new Button();
             SuspendLayout();
             // 
             // listView2
@@ -52,6 +53,7 @@
             listView2.TabIndex = 2;
             listView2.UseCompatibleStateImageBehavior = false;
             listView2.View = View.Details;
+            listView2.DoubleClick += listView2_DoubleClick;
             // 
             // columnHeader1
             // 
@@ -126,11 +128,22 @@
             labelCodiceR.Size = new Size(0, 20);
             labelCodiceR.TabIndex = 13;
             // 
+            // buttonIndietro
+            // 
+            buttonIndietro.Location = new Point(823, 90);
+            buttonIndietro.Name = "buttonIndietro";
+            buttonIndietro.Size = new Size(101, 52);
+            buttonIndietro.TabIndex = 14;
+            buttonIndietro.Text = "Torna Indietro";
+            buttonIndietro.UseVisualStyleBackColor = true;
+            buttonIndietro.Click += buttonIndietro_Click;
+            // 
             // Form4
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(957, 520);
+            Controls.Add(buttonIndietro);
             Controls.Add(labelCodiceR);
             Controls.Add(buttonVisualizzazione1);
             Controls.Add(label2);
@@ -140,6 +153,7 @@
             MaximizeBox = false;
             Name = "Form4";
             Text = "Form4";
+            FormClosing += Form4_FormClosing;
             Load += Form4_Load;
             ResumeLayout(false);
             PerformLayout();
@@ -156,5 +170,6 @@
         private Button buttonVisualizzazione1;
         private Label labelCodiceR;
         private ImageList imageList1;
+        private Button buttonIndietro;
     }
 }

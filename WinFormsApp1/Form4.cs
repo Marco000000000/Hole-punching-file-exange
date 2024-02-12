@@ -11,39 +11,28 @@ using MySql.Data.MySqlClient;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Net.Sockets;
-
+using Newtonsoft.Json;
 namespace WinFormsApp1
 {
     public partial class Form4 : Form
     {
         string utente;
-        MySqlConnection Conn;
-        
-      
-        
-        public Form4(string id)
+        string codice;
+        string codice_peer;
+        string utente_peer;
+        List<string> lista;
+        List<Form4> listaForm = new List<Form4>();
+        string serverURL = "http://localhost:81";
+
+
+        public Form4(string username, string id, string id_peer, string username_peer, List<string> elenco)
         {
             InitializeComponent();
-            utente = id;
-
-            string server = "localhost";
-            string username = "root";
-            string database = "hole_punching";
-           
-
-
-            try
-            {
-                Conn = new MySqlConnection();
-                Conn.ConnectionString = "server=" + server + ";" + "user id=" + username + ";" + "database=" + database;
-                Conn.Open();
-                // MessageBox.Show("connessione eseguita");
-
-            }
-            catch (MySqlException ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+            utente = username;
+            codice = id;
+            codice_peer = id_peer;
+            utente_peer = username_peer;
+            lista = elenco;
         }
 
         private void listView2_SelectedIndexChanged(object sender, EventArgs e)
@@ -95,50 +84,70 @@ namespace WinFormsApp1
             }
 
         }
-        private void Form4_Load(object sender, EventArgs e)
+        private async void Form4_Load(object sender, EventArgs e)
         {
-            labelCodiceR.Text = utente;
-                
-           
-                string serverAddress = "localhost";
-                int serverPort = 12345;
+            labelCodiceR.Text = utente_peer;
+            if (listaForm.Count == 0)
+            {
+                buttonIndietro.Enabled = false;
+                buttonIndietro.Visible = false;
+            }
+            else
+            {
+                buttonIndietro.Enabled = true;
+                buttonIndietro.Visible = true;
+            }
+            // se passo la lista dei path come paramtro questo load si deve cancellare tutto. 
+            //e semplicememnte riempire la view facendo scorrere la lista di path ogni stringa
+            foreach (string line in lista)
+            {
+                FileInfo f = new FileInfo(line);
+                ListViewItem item = new ListViewItem(f.Name);
+                item.SubItems.Add(f.FullName);
+                Estensione(item, f);
+                listView2.Items.Add(item);
+             
+            }
 
-                TcpClient client = new TcpClient(serverAddress, serverPort);
+            // //commento tutto per testare il riempimento con lista passata dal form precedente.
+            //     var data = new Dictionary<string, object>();
+            //         data["username"]=utente;
+            //         data["code"]=codice;
+            //         data["peer_username"]=utente_peer;
+            //         data["peer_codice"]=codice_peer;
+            //         data["query"]=""; // non è ne download ne un click sulla cartella  --> devo richiedere i file condivisi 
+            //         //dalla persona con username "utente" e con codice "codice".
+            //         //data["paths"]= File.ReadAllText("MyFile.txt");
 
-                // Invia l'identificativo del client di tipo 1
-                string clientId = utente;
-                string message = $"{"1"};{clientId};{"none"}"; 
-                // effettivamente per dividere le tipologie di interfacciamento per il server go, 
-                //si potresti stabile un ulteriore divisioni 
-                //ad esempio se iniza con 0 abbiamo un aggiunta/ aggiornamento dei dati 
-                //mentre se inizia con 1 si ha una richiesta dei dati  
-                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(message);
-                // byte[] buffer = System.Text.Encoding.UTF8.GetBytes(clientId);
-                NetworkStream stream = client.GetStream();
-                stream.Write(buffer, 0, buffer.Length);
+            //         var json = JsonConvert.SerializeObject(data);
+            //         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                // Ricevi i dati dal server
-                buffer = new byte[1024];
-                int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                // string receivedData = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                string[] lines = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead).Split(new string[] { "\r\n", "\r", "\n" },StringSplitOptions.None);
-                foreach (string line in lines)
-                {
-                    // MessageBox.Show(line);
-                    if(!line.Equals("")){
-                    FileInfo f = new FileInfo(line);
-                    ListViewItem item = new ListViewItem(f.Name);
-                    item.SubItems.Add(f.FullName);
-                    Estensione(item, f);
-                    listView2.Items.Add(item);
-                    }
-                
-                    }
-                              
-                //  Console.WriteLine($"Dati ricevuti dal server: {receivedData}");
+            //         using var client = new HttpClient();
+            //         var response = await client.PostAsync(serverURL, content);
+            //         // devo avere tornata la lista dei path  in modo tale da riempire la listview2
 
-                client.Close();
-                    
+            //         if (response.IsSuccessStatusCode)
+            //         {
+            //             Console.WriteLine("Dati inviati con successo.");
+            //         }
+            //         else
+            //         {
+            //             Console.WriteLine($"Errore nell'invio dei dati: {response.StatusCode}");
+            //         }
+
+
+
+            /*  StreamReader sr = new StreamReader("MyFile.txt");
+
+              while (!sr.EndOfStream)
+              {
+                 FileInfo f= new FileInfo(sr.ReadLine());
+                  ListViewItem item = new ListViewItem(f.Name);
+                  item.SubItems.Add(f.FullName);
+                  Estensione(item, f);
+                  listView2.Items.Add(item);
+              }
+              sr.Close(); */
 
         }
 
@@ -154,17 +163,125 @@ namespace WinFormsApp1
             }
         }
 
-        private void buttonSeleziona_Click(object sender, EventArgs e)
+        private async void buttonSeleziona_Click(object sender, EventArgs e)
         {
             if (listView2.SelectedItems.Count > 0)
             {
                 MessageBox.Show(listView2.SelectedItems[0].SubItems[1].Text.ToString());
-               
+                // richiesta post con operazione settata per eseguire il downloaf
+
+                var data = new Dictionary<string, object>();
+                data["username"] = utente;
+                data["code"] = codice;
+                data["peer_username"] = utente_peer;
+                data["peer_code"] = codice_peer;
+                data["query"] = "download";
+                data["paths"] = listView2.SelectedItems[0].SubItems[1].Text.ToString();
+
+                var json = JsonConvert.SerializeObject(data);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                using var client = new HttpClient();
+                var response = await client.PostAsync(serverURL, content);
+                // vedere cosa risponde  e notificare se ci sono errori
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("Dati inviati con successo.");
+                }
+                else
+                {
+                    MessageBox.Show($"Errore nell'invio dei dati: {response.StatusCode}");
+                }
+
             }
             else
             {
                 MessageBox.Show("devi selezionare un file da scaricare ");
             }
+        }
+
+        private async void listView2_DoubleClick(object sender, EventArgs e)
+        {
+            // MessageBox.Show(listView2.SelectedItems[0].SubItems[1].Text.ToString());
+            FileInfo f = new FileInfo(listView2.SelectedItems[0].SubItems[1].Text.ToString());
+            if (f.Extension == "")
+            {
+                MessageBox.Show("selezionata una cartella");
+                //quindi dovrebbe  partire una richiesta post per avere 
+                //i nomi dei file contenuti in questa cartella
+                //una volta ottenuti aggiornare la schermata solo con quei file , 
+                //trovare modo per tornare indietro
+
+                var data = new Dictionary<string, object>();
+                data["username"] = utente;
+                data["code"] = codice;
+                data["peer_username"] = utente_peer;
+                data["peer_code"] = codice_peer;
+                data["query"] = "names";
+                data["path"] = listView2.SelectedItems[0].SubItems[1].Text.ToString();
+
+                var json = JsonConvert.SerializeObject(data);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                using var client = new HttpClient();
+                var response = await client.PostAsync(serverURL, content);
+                // questa richiesta mi deve tornare i percorsi di tutti i file contenuti 
+                //nella cartella a cui si è fatto doppio click
+
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show(response.ToString());
+                    string result = response.Content.ReadAsStringAsync().Result;
+                    MessageBox.Show(result);
+                    dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";
+                    // if (obj.error != null)
+                    //     MessageBox.Show("si è verificato un errore " + obj.error);
+                    // if (obj.ok != null)
+                    //     MessageBox.Show("questo :" + obj.ok); //capire se ha ok come chiave
+
+            // //String[] lista1 = obj.ok.ToObject<string[]>();
+            // List<string> lista1 = obj.ok.ToObject<List<string>>();  
+            //     //devo vedere quale è la chiave perchè non è ok
+            // this.Visible = false;
+            // Form4 form4 = new Form4(utente, codice, codice_peer, utente_peer, lista1);
+            // listaForm.Add(form4);
+            // //aggiungere come parametro la lista dei path se gia restituita dalla richiesta ?
+            // form4.Show();
+            // this.Visible = true;
+
+                    // --> svuotare la listview corrente e riempirla con i nuovi file? 
+                    //pero problema nel tornare indietro
+                    //------
+                    //altra idea sarebbe modificare il form4 e fare in modo  che abbi nel cotruttore una lista di stringhe, cioè i path
+                    //quindi il form3 quando lo invoca la prima volta fornira pure questa lista , che dovrebbe essere risposta 
+                    //alla richiesta post che comunque bisogna fare per vedere se esiste l'utente 
+                    //con determinato username e determinato codice random. quindi qui si creerebbe un nuovo form4 con stabolta passata 
+                    //questa nuova lista di stringhe, il vecchio verebbe reso invisbile e reso dinuovo 
+                    //visbile solo dopo la chiusura dell'altro
+                }
+                else
+                {
+                    MessageBox.Show($"Errore nell'invio dei dati: {response.StatusCode}");
+                }
+
+            }
+        }
+
+        private void Form4_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if(listaForm.Count>0)
+             foreach (Form4 f in listaForm)
+             {
+                 //forse piu coretto fare un form 5 e scorrere un lista di essi
+                 f.Close();
+             }
+            
+        }
+
+        private void buttonIndietro_Click(object sender, EventArgs e)
+        {
+            listaForm.Remove(this);
+            this.Close();
         }
     }
 }

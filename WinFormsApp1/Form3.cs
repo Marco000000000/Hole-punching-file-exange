@@ -14,6 +14,8 @@ using Microsoft.VisualBasic.ApplicationServices;
 using MySql.Data.MySqlClient;
 using static System.Windows.Forms.LinkLabel;
 using System.Net.Sockets;
+using Newtonsoft.Json;
+using Microsoft.VisualBasic;
 
 namespace WinFormsApp1
 {
@@ -21,36 +23,17 @@ namespace WinFormsApp1
     {
         //string numero;
         string id_random;
-        MySqlConnection Conn;
-        string sqlQuerry;
-       
-
+        string username;
+        string serverURL = "http://localhost:81";
         List<Form4> list = new List<Form4>();
 
-        public Form3(string codice)
+        public Form3(string codice, string nome)
         {
             InitializeComponent();
-            //numero = id;
             id_random=codice;
-            string server = "localhost";
-            string username = "root";
-            string database = "hole_punching";
-         
-
-            try
-            {
-                Conn = new MySqlConnection();
-                Conn.ConnectionString = "server=" + server + ";" + "user id=" + username + ";" + "database=" + database;
-                Conn.Open();
-                // MessageBox.Show("connessione eseguita");
-
-            }
-            catch (MySqlException ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+            username=nome;
+           
         }
-
 
 
         private void onClickAggiungi(object sender, EventArgs e)
@@ -77,7 +60,7 @@ namespace WinFormsApp1
                         outputFile.WriteLine(f.FullName);
                     }
                  //mandare al server python una nuova richiesta di aggiornamento con i nuobi dati
-                    InvioDati(); 
+                 InvioDati(); 
                 }
             
             }
@@ -90,8 +73,6 @@ namespace WinFormsApp1
             // if(listView1.Items.Count > 0)
             if (listView1.SelectedItems.Count > 0)
             {
-
-                
 
                  string[] readText = File.ReadAllLines("MyFile.txt");
                 // 2. pulisco il file
@@ -162,23 +143,41 @@ namespace WinFormsApp1
             }
 
         }
-private void InvioDati(){
-                string serverAddress = "localhost";
-                int serverPort = 12345;
-
-                TcpClient client = new TcpClient(serverAddress, serverPort);
-
-                // Invia l'identificativo seguito dai dati
-                string clientId = id_random;
-                
-                string data = File.ReadAllText("MyFile.txt");
-                string message = $"{"0"};{clientId};{data}";
-                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(message);
-                NetworkStream stream = client.GetStream();
-                stream.Write(buffer, 0, buffer.Length);
-                client.Close();
+private async void InvioDati(){
+            List<string> lista = File.ReadAllLines("MyFile.txt").ToList();
+           // MessageBox.Show(lista);
+            var data = new Dictionary<string, object>();
+            data["username"]=username;
+            data["code"]=id_random;
+            data["query"]="start_share";
+            data["path"]= lista;
+            
+            var json = JsonConvert.SerializeObject(data);
+            //MessageBox.Show(json);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            try{
+            using HttpClient client = new HttpClient();
+            //var response = await client.PostAsync(serverURL+"/", content);
+            var response = await client.PostAsync(serverURL+"/", content);
+            MessageBox.Show(response.ToString());
+            // vedere se ritorna qualcosa questa richiesta e notificare in caso di errore
+              string result = response.Content.ReadAsStringAsync().Result;
+              MessageBox.Show(result);
+              
+               dynamic obj = JsonConvert.DeserializeObject(result)??"nullo";
+                    if (obj.error != null)
+                    MessageBox.Show("si è verificato un errore " + obj.error);
+                    if(obj.ok !=null)
+                    MessageBox.Show("questo :"+obj.ok);
+                    //start_share risponde con ok: i path dei file
+                    
+                   
+            }catch(Exception e ){
+                MessageBox.Show(e.Message);
+            }
+            
 }
-   private void Form3_Load(object sender, EventArgs e)
+   private  void Form3_Load(object sender, EventArgs e)
         {
            labelCodice.Text = id_random; // dovrei mettere ciò che mi restituisce il database
 
@@ -186,15 +185,15 @@ private void InvioDati(){
             if (!File.Exists("MyFile.txt"))
             {
                 using (StreamWriter sw = File.CreateText("MyFile.txt")) { }
+                return;
             }
             InvioDati(); 
-            
+        
            // ---------------
               // dovrei caricare  i precedenti file che l'utente rende disponivili
               // quindi apro questo file dove ho salvato le informazioni sul path
               // riempio la lista con le informazioni 
               // chiudo il file
-        //_------------------------------------------------------
             // devo aprire il file dove ho conservato tutti i path dei mie elemmenti condivisi
             // leggere ogni riga ed aggiungere gli elementi alla list view
 
@@ -214,53 +213,70 @@ private void InvioDati(){
 
 
 
-        private void onClickRicevitore(object sender, EventArgs e)
+        private async void onClickRicevitore(object sender, EventArgs e)
         {
 
-            if (textCodice.Text.Length > 0 && textCodice.Text != id_random)
-                 {
-                    
-                      DataTable dt = new DataTable();
-                      MySqlDataReader dr;
-                      sqlQuerry = "SELECT `id_random`,`status` FROM utenti WHERE id_random='" + textCodice.Text+"'";
-                        //problema se il codice random contiene ' 
-                     // MessageBox.Show(sqlQuerry);
-                     MySqlCommand cmd = new MySqlCommand(sqlQuerry, Conn);
-                     dr = cmd.ExecuteReader();
-                     dt.Load(dr);
-                     //in teoria dato che id_random dovrebbe essere univoco 
-                     //il risultato dcella querry dovrebbe essere un'unica riga 
-                     
-                     try
-                     {
-                         foreach (DataRow row in dt.Rows)
-                         {
-                              // MessageBox.Show(row["status"].ToString());
-                             if ((bool)row["status"])
-                             {
-                                 Form4 form4 = new Form4(textCodice.Text);
-                                 list.Add(form4);
-                                 form4.Show();
-                                 
-                             }else{
-                                MessageBox.Show("utente non più connesso, farlo ricoleggare e inserire il nuovo codice");
-                             }
-                         }
-                         textCodice.Text = string.Empty;
-                     }
-                     catch (MySqlException ex) 
-                     {
-                        MessageBox.Show(ex.Message); 
-                     }
-                    dr.Close();
-                    dt.Clear();
-                }
+            if (textCodice.Text.Length > 0  && textUserRicevitore.Text.Length > 0 && textUserRicevitore.Text != username)
+            {
 
-             else if(textCodice.Text.Length > 0)
-             { 
-                textCodice.Text = string.Empty;  
-                MessageBox.Show("inserisci un codice che non sia il tuo");
-             }
+                // devo compilare entrambi i campi e il campo realtivo all' username deve essere diverso dal mio
+                //a questo pinto posso creare la richiesta POST con username, codice, username_peer, codice_peer, operation 
+                 MessageBox.Show("preparo la richiesta ");
+                var data = new Dictionary<string, object>();
+                data["username"]=username;
+                data["code"]=id_random;
+                data["peer_username"]=textUserRicevitore.Text;
+                data["peer_code"]=textCodice.Text;
+                data["query"]="names"; // non è ne download ne un click sulla cartella 
+                data["path"]="/";
+
+     //provo con una richiesta start share per vedere se il form 4 viene costruito bene passando una lista
+                // data["query"]="start_share";
+                // List<string> lista = File.ReadAllLines("MyFile.txt").ToList();
+                // data["path"]=lista;
+    //verificato che passando la lista di stringhe il form4 viene costruito bene
+
+                var json = JsonConvert.SerializeObject(data);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                try{
+                using HttpClient client = new HttpClient();
+                var response = await client.PostAsync(serverURL+"/", content);
+                MessageBox.Show(response.ToString());
+                //dovrei avere in risposta una lista  passarla direttamnte al form4 per evitare 
+                //di fare un'ulteriore richiesta post li nella sua load.
+                string result = response.Content.ReadAsStringAsync().Result;
+                 MessageBox.Show(result);
+                //  dynamic obj = JsonConvert.DeserializeObject(result)??"nullo";
+                //     if (obj.error != null)
+                //     MessageBox.Show("si è verificato un errore " + obj.error);
+                //     if(obj.ok !=null){
+                //     MessageBox.Show("questo :"+obj.ok);
+                 //capire se ha ok come chiave
+
+                    // la risposta alla richiesta post deve essere 
+                    //l'elenco dei path dell'utente con il codice e username scritti nei campi
+        //   List<string> lista1 = obj.ok.ToObject<List<string>>();
+                    //funziona si come stringa che come string[]
+                    List<string>lista1= File.ReadAllLines("MyFile.txt").ToList();
+                     Form4 form4 = new Form4(username,id_random,textCodice.Text,textUserRicevitore.Text,lista1); 
+                     //aggiungere come parametro la lista dei path se gia restituita dalla richiesta ?
+                     list.Add(form4);
+                     form4.Show();
+               
+                    // MessageBox.Show("errore nel invio dati");
+                //}
+
+            }catch(Exception ex){
+                MessageBox.Show(ex.Message);
+            }
+            }
+
+            else if (textCodice.Text.Length > 0 && textUserRicevitore.Text.Length>0)
+            {
+                textCodice.Text = string.Empty;
+                textUserRicevitore.Text = string.Empty;
+                MessageBox.Show("Non puoi inserire il tuo username");
+            }
         
          }        
     
@@ -311,6 +327,7 @@ private void InvioDati(){
                    
                         outputFile.WriteLine(f.FullName);
                 }
+                InvioDati();
             }
 
             //qui dato che apriamo una cartella si usa l'icona di una cartella
@@ -322,12 +339,8 @@ private void InvioDati(){
             if(list.Count>0)
             foreach(Form4 f in list)
                 {
-                    f.Close();
+                    f.Close(); 
                 }
-
-            sqlQuerry = "UPDATE `utenti` SET `status`= 0 WHERE id_random='" + id_random + "'";  //qui si potrebbe fare su id random
-            MySqlCommand cmd1 = new MySqlCommand(sqlQuerry, Conn);
-            cmd1.ExecuteNonQuery();
           
         }
     }

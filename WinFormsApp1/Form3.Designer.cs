@@ -44,6 +44,8 @@
             buttonRicevitore = new Button();
             buttonVisualizzazione = new Button();
             buttonFolder = new Button();
+            lblUserRicevitore = new Label();
+            textUserRicevitore = new TextBox();
             SuspendLayout();
             // 
             // label1
@@ -140,10 +142,22 @@
             buttonFolder.UseVisualStyleBackColor = true;
             buttonFolder.Click += onClickFolder;
             // 
+            // lblUserRicevitore
+            // 
+            resources.ApplyResources(lblUserRicevitore, "lblUserRicevitore");
+            lblUserRicevitore.Name = "lblUserRicevitore";
+            // 
+            // textUserRicevitore
+            // 
+            resources.ApplyResources(textUserRicevitore, "textUserRicevitore");
+            textUserRicevitore.Name = "textUserRicevitore";
+            // 
             // Form3
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
+            Controls.Add(textUserRicevitore);
+            Controls.Add(lblUserRicevitore);
             Controls.Add(buttonFolder);
             Controls.Add(buttonVisualizzazione);
             Controls.Add(buttonRicevitore);
@@ -179,5 +193,7 @@
         private Button buttonRicevitore;
         private Button buttonVisualizzazione;
         private Button buttonFolder;
+        private Label lblUserRicevitore;
+        private TextBox textUserRicevitore;
     }
 }
