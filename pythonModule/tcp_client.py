@@ -332,7 +332,7 @@ class connector:
                                 self.operation=0
                                 
                             elif self.operation == 3:
-                                self.ans=self.__handleDirectoryFiles__(s,self.path,role) 
+                                self.ans=list(self.__handleDirectoryFiles__(s,self.path,role).keys() )
                                 self.ansReady=True
                                 #return parameter
                                 self.operation=0
@@ -539,6 +539,8 @@ class connector:
         
 
     def handleOperation(self,peer_username,peer_code,path,operation):
+        #versione con il solo server
+        #return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
 
         if self.holeCreated:
             #print("hole")
@@ -549,7 +551,6 @@ class connector:
             else:
                 print("handle"+str(operation))
                 return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
-
 
 
 
