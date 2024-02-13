@@ -964,8 +964,9 @@ class serverConnector:
                 with open(path, 'rb') as file:
                     file_data = file.read()
                 request=requests.post("http://"+TURNSERVER+"/response/"+code,data=file_data)
-                ##print(request.json)
+                logging.info("respose download data=file_data")
             else:
+                logging.info("respose download &s",str({"error":"path not allowed"}))
                 requests.post("http://"+TURNSERVER+"/response/"+code, json={"error":"path not allowed"})
 
         elif operation==4:
@@ -1317,60 +1318,8 @@ class clientConnector:
             self.holeCreated=False
         finally:
             self.__mutex__.release()
-    #gestisce lato server lo stato di online e ritorna le richieste da smaltire       
-    def __handleHttpHearthBit__(self):
-        while True:
-            try:
-                data={
-                "username":self.user,
-                "code":self.code,
-                }
-                response=requests.get("http://"+TURNSERVER+"/hearthBit",json=data)
-                response=response.json()
-                print("hearthbit")
-                for data in response:
-                    if "operation" in data:
-                        #print(data)
-                        self.__handleTurnOperation__(data["path"],data["operation"],data["code"])
-            except:
-                print("exception in handle HTTP hearth bit")
-            time.sleep(2) 
 
-
-            
-    #gestisce ogni tipo di operazione ricevuta in __handleHttpHearthBit__
-    def __handleTurnOperation__(self,path,operation,code):
-        #inserire una get per l'accettazione
-        path=str(path)
-        if operation==1: 
-            if stringInsideAList(path,self.paths):
-
-                with open(path, 'rb') as file:
-                    file_data = file.read()
-                request=requests.post("http://"+TURNSERVER+"/response/"+code,data=file_data)
-                ##print(request.json)
-            else:
-                requests.post("http://"+TURNSERVER+"/response/"+code, json={"error":"path not allowed"})
-
-        elif operation==4:
-            requests.post("http://"+TURNSERVER+"/response/"+code, json={"AcceptHole":True})
-            thread=threading.Thread(target=self.__create_hole__())
-            time.sleep(0.1)
-            thread.start()
-        elif operation==3:
-            if path=="/":
-                requests.post("http://"+TURNSERVER+"/response/"+code, json=self.paths)
-
-            else:
-                if stringInsideAList(path,self.paths):
-                    #print(path)
-                    requests.post("http://"+TURNSERVER+"/response/"+code, json=(self.get_all_files_in_directory(path)))
-                else:
-                    requests.post("http://"+TURNSERVER+"/response/"+code, json={"error":"path not allowed"})
-
-        else:
-            requests.post("http://"+TURNSERVER+"/response/"+code, json={"error":"Bad Operation"})
-
+   
 
               
     #funzione che richiede il permesso di poter eseguire l'hole punch
@@ -1489,7 +1438,7 @@ class clientConnector:
     #gestisce il flusso e sceglie se passare l'operazione tramite il server o usando l'hole punch
     def handleOperation(self,peer_username,peer_code,path,operation):
         #versione con il solo server
-        #return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
         logging.info("self.holeCreated=_%s",str(self.holeCreated))
         try:
             if self.holeCreated:
