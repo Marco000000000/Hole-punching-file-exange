@@ -1284,14 +1284,14 @@ class clientConnector:
                     timer=time.time()
                     if self.operation==1:
                         print(self.__handleFileDownload__(s,self.path))
-                        self.ans="True"
+                        self.ans=["True"]
                         self.ansReady=True
                         print(self.ansReady)
                         self.operation=0
                         
                     elif self.operation == 2:
                         print(self.__handleSincronizeDownload__(s,self.path))
-                        self.ans="True"
+                        self.ans=["True"]
                         self.ansReady=True
                         self.operation=0
                         
