@@ -107,7 +107,7 @@ class Client(namedtuple('Client', 'conn, pub, priv')):
 #                 return "True"
 #             if self.requestWithOutHole>0:
 #                 self.requestWithOutHole-=1
-#                 return "False"
+#                 return ["/error"]
 #             if self.role=="client":
 #                 self.__getPermission__(peer_username,peer_code)
         
@@ -176,10 +176,10 @@ class Client(namedtuple('Client', 'conn, pub, priv')):
 #                         return "True"
 #             #Operazione utilizzata per non avere continuo ritardo in caso di fallimento
 #             self.requestWithOutHole=5
-#             return "False"
+#             return ["/error"]
 #         except:
 #             self.requestWithOutHole=5
-#             return "False"
+#             return ["/error"]
 #     #funzione che implementa l'accettazione  del primo messaggio
 #     def __accept__(self,port):
 #         try:
@@ -269,7 +269,7 @@ class Client(namedtuple('Client', 'conn, pub, priv')):
 #             self.operation=operation
 #             self.path=path
 #         else:
-#             return "False"
+#             return ["/error"]
 #         while not self.ansReady and self.holeCreated:
 #             time.sleep(1)
 #             print("waiting"+str(self.ansReady))
@@ -558,7 +558,7 @@ class Client(namedtuple('Client', 'conn, pub, priv')):
 #                 received_file.write(response.content)
 #             return "True"
 #         except:
-#             return "False"
+#             return ["/error"]
    
 #     #richiesta dei nomi dei file dentro una cartella tramite server 
 
@@ -603,7 +603,7 @@ class Client(namedtuple('Client', 'conn, pub, priv')):
 #                         self.__turnSincronizeDirectory__(dataTemp,subPath)
 #                 return "True"
 #             except:
-#                 return "False"
+#                 return ["/error"]
 #     #creazione della struttura dati da mandare al server go dalla richiesta ricevuta sul server locale flask
 #     def turnOperation(self,user,code,peer_username,peer_code,operation,path):
 #         data={
@@ -676,7 +676,7 @@ class serverConnector:
                 return "True"
             if self.requestWithOutHole>0:
                 self.requestWithOutHole-=1
-                return "False"
+                return ["/error"]
 
         
             sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -744,10 +744,10 @@ class serverConnector:
                         return "True"
             #Operazione utilizzata per non avere continuo ritardo in caso di fallimento
             self.requestWithOutHole=5
-            return "False"
+            return ["/error"]
         except:
             self.requestWithOutHole=5
-            return "False"
+            return ["/error"]
     #funzione che implementa l'accettazione  del primo messaggio
     def __accept__(self,port):
         try:
@@ -832,7 +832,7 @@ class serverConnector:
             self.operation=operation
             self.path=path
         else:
-            return "False"
+            return ["/error"]
         while not self.ansReady and self.holeCreated:
             time.sleep(1)
             print("waiting"+str(self.ansReady))
@@ -1008,7 +1008,7 @@ class clientConnector:
                 return "True"
             if self.requestWithOutHole>0:
                 self.requestWithOutHole-=1
-                return "False"
+                return ["/error"]
             self.__getPermission__(peer_username,peer_code)
         
             sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1076,10 +1076,10 @@ class clientConnector:
                         return "True"
             #Operazione utilizzata per non avere continuo ritardo in caso di fallimento
             self.requestWithOutHole=5
-            return "False"
+            return ["/error"]
         except:
             self.requestWithOutHole=5
-            return "False"
+            return ["/error"]
     #funzione che implementa l'accettazione  del primo messaggio
     def __accept__(self,port):
         try:
@@ -1165,7 +1165,7 @@ class clientConnector:
             self.operation=operation
             self.path=path
         else:
-            return "False"
+            return ["/error"]
         while not self.ansReady and self.holeCreated:
             time.sleep(1)
             print("waiting"+str(self.ansReady))
@@ -1400,7 +1400,7 @@ class clientConnector:
                 received_file.write(response.content)
             return "True"
         except:
-            return "False"
+            return ["/error"]
    
     #richiesta dei nomi dei file dentro una cartella tramite server 
 
@@ -1445,7 +1445,7 @@ class clientConnector:
                         self.__turnSincronizeDirectory__(dataTemp,subPath)
                 return "True"
             except:
-                return "False"
+                return ["/error"]
     #creazione della struttura dati da mandare al server go dalla richiesta ricevuta sul server locale flask
     def turnOperation(self,user,code,peer_username,peer_code,operation,path):
         data={
