@@ -15,8 +15,8 @@ logger = logging.getLogger('client')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 DOWNLOADDIRECTORY=os.getenv("downloadDirectory","../downloadDirectory")
-TURNSERVER="192.168.239.22" #server di gestione delle richieste di controllo e scambio messaggi tramite server
-HOLESERVER="192.168.239.22" #server gestore dello scambio degli indirizzi
+TURNSERVER=os.getenv("turnServer","192.168.1.64") #server di gestione delle richieste di controllo e scambio messaggi tramite server
+HOLESERVER=os.getenv("holeServer","192.168.1.64") #server gestore dello scambio degli indirizzi
 #funzione ausiliare per vedere se si sta richiedendo un path valido
 def stringInsideAList(path,paths):
     for temp in paths:
