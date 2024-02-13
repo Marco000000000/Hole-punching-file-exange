@@ -153,13 +153,10 @@ namespace WinFormsApp1
                   
 
                 List<string> lista1 = obj.ToObject<List<string>>();
-                if(lista1.Count==0){
-                        MessageBox.Show("connessione rifiutata");
-                        return;
-                    }
-                    if(lista1[0].Equals("/error")||lista1[0].Equals("error")){
-                            MessageBox.Show("errore generico"+lista1[0]);
-                    }
+                if(lista1.Count!=0&&(lista1[0].Equals("/error")||lista1[0].Equals("error"))){
+                    MessageBox.Show("errore generico"+lista1[0]);
+                    return;
+                }
                 else 
                 {
                     MessageBox.Show("Download eseguito con successo.");
@@ -210,11 +207,7 @@ namespace WinFormsApp1
                   
 
                     List<string> lista1 = obj.ToObject<List<string>>();
-                    if(lista1.Count==0){
-                        MessageBox.Show("connessione rifiutata");
-                        return;
-                    }
-                    if(lista1[0].Equals("/error")||lista1[0].Equals("error")){
+                    if(lista1.Count!=0&&(lista1[0].Equals("/error")||lista1[0].Equals("error"))){
                             MessageBox.Show("errore generico"+lista1[0]);
                     }
                     else{
