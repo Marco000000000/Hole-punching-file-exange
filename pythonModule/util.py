@@ -15,8 +15,8 @@ logger = logging.getLogger('client')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 DOWNLOADDIRECTORY=os.getenv("downloadDirectory","../downloadDirectory")
-TURNSERVER="192.168.80.22" #server di gestione delle richieste di controllo e scambio messaggi tramite server
-HOLESERVER="192.168.80.22" #server gestore dello scambio degli indirizzi
+TURNSERVER="192.168.239.22" #server di gestione delle richieste di controllo e scambio messaggi tramite server
+HOLESERVER="192.168.239.22" #server gestore dello scambio degli indirizzi
 #funzione ausiliare per vedere se si sta richiedendo un path valido
 def stringInsideAList(path,paths):
     for temp in paths:
@@ -1394,13 +1394,20 @@ class clientConnector:
             else:
                 fileName=file.split("\\")[-1]
             #print("newPath:")
+            try:
+                temp=response.json()
+                if "/error" in temp or "error" in temp:
+                    return ["error"]
+            except:
+                pass
+
             #print(os.path.join( DOWNLOADDIRECTORY,subPath,fileName))
             with open(os.path.join( DOWNLOADDIRECTORY,subPath,fileName), 'wb') as received_file:
                 ##print(response.content)
                 received_file.write(response.content)
-            return "True"
+            return ["True"]
         except:
-            return ["/error"]
+            return ["error"]
    
     #richiesta dei nomi dei file dentro una cartella tramite server 
 
@@ -1469,7 +1476,7 @@ class clientConnector:
     #gestisce il flusso e sceglie se passare l'operazione tramite il server o usando l'hole punch
     def handleOperation(self,peer_username,peer_code,path,operation):
         #versione con il solo server
-        #return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
         logging.info("self.holeCreated=_%s",str(self.holeCreated))
         try:
             if self.holeCreated:

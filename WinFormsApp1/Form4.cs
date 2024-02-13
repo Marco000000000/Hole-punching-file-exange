@@ -143,18 +143,26 @@ namespace WinFormsApp1
 
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                using var client = new HttpClient();
-                var response = await client.PostAsync(serverURL, content);
+                
+                using HttpClient client = new HttpClient();
+                var  response = await client.PostAsync(serverURL, content);
                 // vedere cosa risponde  e notificare se ci sono errori
-                if (response.IsSuccessStatusCode)
+                string result = response.Content.ReadAsStringAsync().Result;
+                    // MessageBox.Show(result);
+                MessageBox.Show("errore generico"+result);
+                dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";
+                  
+
+                List<string> lista1 = obj.ToObject<List<string>>();
+                if(lista1[0].Equals("/error")||lista1[0].Equals("error")){
+                        MessageBox.Show("errore generico"+lista1[0]);
+                        return;
+                }
+                else 
                 {
                     MessageBox.Show("Download eseguito con successo.");
                 }
-                else
-                {
-                    MessageBox.Show($"Errore nella connessione {response.StatusCode}");
-                }
+                
 
             }
             else
@@ -200,8 +208,8 @@ namespace WinFormsApp1
                   
 
                     List<string> lista1 = obj.ToObject<List<string>>();
-                    if(lista1[0].Equals("/error")){
-                            MessageBox.Show("errore generico"+obj.error);
+                    if(lista1[0].Equals("/error")||lista1[0].Equals("error")){
+                            MessageBox.Show("errore generico"+lista1[0]);
                     }
                     else{
                     Form4 form4 = new Form4(utente, codice, codice_peer, utente_peer, lista1, false, this);
