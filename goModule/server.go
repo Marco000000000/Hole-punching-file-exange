@@ -142,6 +142,11 @@ func HandleHoleConnect(conn net.Conn) {
 // funzione per la gestione della memoria che pulisce le strutture dati se restano richieste pendenti senza risposta
 func garbageCollector() {
 	for {
+		// fmt.Println("clients:", len(clients))
+		// fmt.Println("sendedRequests:", len(sendedRequests))
+
+		// fmt.Println("waitingRequests:", len(waitingRequests))
+
 		for key, value := range clients {
 			if int(time.Since(value.timer).Seconds()) > 5 {
 
@@ -152,12 +157,31 @@ func garbageCollector() {
 			}
 
 		}
-		if time.Now().Second()-waitingRequestsTimer.Second() > 10 {
+		if int((time.Since(sendedRequestsTimer)).Hours()) > 1 {
+			for forDeleteKey, requestForUser := range sendedRequests {
+
+				if time.Now().Hour()-requestForUser.timer.Hour() > 1 {
+					fmt.Println("rimozione di vecchie richieste")
+					sendedRequestsMutex.Lock()
+					delete(sendedRequests, forDeleteKey)
+					sendedRequestsMutex.Unlock()
+				}
+
+			}
+			sendedRequestsTimer = time.Now()
+		}
+		if int((time.Since(waitingRequestsTimer)).Seconds()) > 10 {
 			for forDeleteKey, requestForUser := range waitingRequests {
 				for i := 0; i < len(requestForUser.link); i++ {
 					if time.Now().Second()-requestForUser.timer[i].Second() > 10 {
 						fmt.Println("rimozione di vecchie richieste")
-						RemoveKeyFromWaitingRequests(forDeleteKey)
+						waitingRequestsMutex.Lock()
+						for i := 0; i < len(waitingRequests[forDeleteKey].link); i++ {
+							close(waitingRequests[forDeleteKey].link[i])
+						}
+						fmt.Println("deleting " + forDeleteKey)
+						delete(waitingRequests, forDeleteKey)
+						waitingRequestsMutex.Unlock()
 					}
 				}
 			}
@@ -621,11 +645,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		waitingRequestsMutex.Unlock()
 		fmt.Println(waitingRequests)
 
-		fmt.Printf("lissening")
-		select {
-		case <-done:
-
-		}
+		fmt.Printf("listening")
+		<-done
 		return
 	}
 	response := map[string]string{"/error": "bad access data"}

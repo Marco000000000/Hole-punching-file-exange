@@ -11,16 +11,6 @@ import (
 	"unicode"
 )
 
-// funzione ausiliaria che implementa la chiusura delle richieste pendenti e rimuove il rispettivo campo da waitingRequests
-func RemoveKeyFromWaitingRequests(keyToDelete string) {
-	waitingRequestsMutex.Lock()
-	for i := 0; i < len(waitingRequests[keyToDelete].link); i++ {
-		close(waitingRequests[keyToDelete].link[i])
-	}
-	delete(waitingRequests, keyToDelete)
-	waitingRequestsMutex.Unlock()
-}
-
 // funzioni ausiliarie per l'implementazione del protocollo di scambio degli indirizzi
 func KeepNumbersAndDot(input string) string {
 	var result string

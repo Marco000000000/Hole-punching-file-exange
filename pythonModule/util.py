@@ -16,7 +16,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 DOWNLOADDIRECTORY=os.getenv("downloadDirectory","../downloadDirectory")
 TURNSERVER=os.getenv("turnServer","192.168.1.64") #server di gestione delle richieste di controllo e scambio messaggi tramite server
-HOLESERVER=os.getenv("holeServer","192.168.1.64") #server gestore dello scambio degli indirizzi
 #funzione ausiliare per vedere se si sta richiedendo un path valido
 def stringInsideAList(path,paths):
     for temp in paths:
@@ -105,7 +104,7 @@ class Client(namedtuple('Client', 'conn, pub, priv')):
 
 #     #funzione che implementa l'algoritmo di hole punching tcp aggiungendo dei messaggi di controllo
 #     #per l'ottenimento dei permessi dal server
-#     def __create_hole__(self,host=HOLESERVER, port=5000,peer_username="",peer_code=""):
+#     def __create_hole__(self,host=TURNSERVER, port=5000,peer_username="",peer_code=""):
 #         try:
 #             if self.holeCreated:
 #                 return "True"
@@ -674,7 +673,7 @@ class serverConnector:
 
     #funzione che implementa l'algoritmo di hole punching tcp aggiungendo dei messaggi di controllo
     #per l'ottenimento dei permessi dal server
-    def __create_hole__(self,host=HOLESERVER, port=5000,peer_username="",peer_code=""):
+    def __create_hole__(self,host=TURNSERVER, port=5000,peer_username="",peer_code=""):
         try:
             if self.holeCreated:
                 return "True"
@@ -1011,7 +1010,7 @@ class clientConnector:
 
     #funzione che implementa l'algoritmo di hole punching tcp aggiungendo dei messaggi di controllo
     #per l'ottenimento dei permessi dal server
-    def __create_hole__(self,host=HOLESERVER, port=5000,peer_username="",peer_code=""):
+    def __create_hole__(self,host=TURNSERVER, port=5000,peer_username="",peer_code=""):
         try:
             if self.holeCreated:
                 return "True"
