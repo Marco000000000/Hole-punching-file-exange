@@ -46,6 +46,8 @@
             buttonFolder = new Button();
             lblUserRicevitore = new Label();
             textUserRicevitore = new TextBox();
+            labelUsername = new Label();
+            labelUsername1 = new Label();
             SuspendLayout();
             // 
             // label1
@@ -152,10 +154,22 @@
             resources.ApplyResources(textUserRicevitore, "textUserRicevitore");
             textUserRicevitore.Name = "textUserRicevitore";
             // 
+            // labelUsername
+            // 
+            resources.ApplyResources(labelUsername, "labelUsername");
+            labelUsername.Name = "labelUsername";
+            // 
+            // labelUsername1
+            // 
+            resources.ApplyResources(labelUsername1, "labelUsername1");
+            labelUsername1.Name = "labelUsername1";
+            // 
             // Form3
             // 
             resources.ApplyResources(this, "$this");
             AutoScaleMode = AutoScaleMode.Font;
+            Controls.Add(labelUsername1);
+            Controls.Add(labelUsername);
             Controls.Add(textUserRicevitore);
             Controls.Add(lblUserRicevitore);
             Controls.Add(buttonFolder);
@@ -195,5 +209,7 @@
         private Button buttonFolder;
         private Label lblUserRicevitore;
         private TextBox textUserRicevitore;
+        private Label labelUsername;
+        private Label labelUsername1;
     }
 }

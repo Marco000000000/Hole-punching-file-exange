@@ -1,57 +1,30 @@
-
-using System;
-using System.Data;
-using MySql.Data.MySqlClient;
-using System.Net.Http;
-using System.Threading.Tasks;
 using System.Text;
 using Newtonsoft.Json;
 using System.Diagnostics;
-using System.Diagnostics;
-
 
 namespace WinFormsApp1
 {
     public partial class Form1 : Form
     {
-        string serverURL = "http://151.74.146.179:80";
-
+       // string serverURL = "http://151.74.146.179:80";
+        string serverURL="http://127.0.0.1:80";
         Process process;
         public Form1()
         {
             InitializeComponent();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-            ProcessStartInfo start = new ProcessStartInfo();
-            start.FileName = "python"; // Aggiorna con il percorso del tuo interprete Python
-            start.Arguments = string.Format("{0} {1}", "../pythonModule/tcp_client.py", ""); // Aggiorna con il percorso del tuo script Python e gli argomenti necessari
-            start.UseShellExecute = false; 
-            start.RedirectStandardOutput = true;  //per motivi di debug
-            process = Process.Start(start);
-            if (process == null)
-                Environment.Exit(1);
-
-        }
-
 
         private async void onClickLogin(object sender, EventArgs e)
         {
-            // string id="default";
-            bool flag = false;
+        
             string id_random;
             var dati = new Dictionary<string, object>();
             lblError.Text = string.Empty;
 
             if (textName.Text.Equals("") || textPassword.Text.Equals(""))
-            {
                 lblError.Text = "Inserire le credenziali ";
-                flag = true;
-            }
-
-            if (!flag)
+            else
             {
                 //  Form3 form3 = new Form3(id_random, textName.Text); 
                 // form3.Show();
@@ -65,7 +38,7 @@ namespace WinFormsApp1
                 var data = new StringContent(json, Encoding.UTF8, "application/json");
                 try
                 {
-
+                     //se tutto va bene invio le credeziali per poter eseguire l'accesso
                     using HttpClient client = new HttpClient();
                     var response = await client.PostAsync(serverURL + "/login", data);
                     //var response = await client.PostAsync("http://127.0.0.1:80/login", data);
@@ -84,8 +57,8 @@ namespace WinFormsApp1
                             Form3 form3 = new Form3(id_random, (string)dati["username"]);
                             form3.ShowDialog();
                             this.Visible = true;
-                            //se tutto va bene invio le credeziali per poter eseguire l'accesso
-                            //se esistono chiudo la schede e ne apro una relativa a trasmissione 
+                           
+                            //se va beme rendo invisibile  la schede e ne apro una relativa a trasmissione , una volta chiusa quella tornerà visibile il form1
                         }
                         else
                             MessageBox.Show("risposta inaspettata dal server");
@@ -95,12 +68,9 @@ namespace WinFormsApp1
                         MessageBox.Show($"Si è verificato un errore con la deserializzazione: {ex.Message}");
                     }
                 }
-                catch (Exception ex)
-                {
+                catch (Exception ex) {
                     MessageBox.Show($"Si è verificato un errore: {ex.Message}");
                 }
-
-
 
             }
 
@@ -113,15 +83,6 @@ namespace WinFormsApp1
             Form2 form2 = new Form2();
             form2.ShowDialog();
 
-        }
-
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if (process != null)
-            {
-                process.Kill();
-                process = null;
-            }
         }
     }
 }

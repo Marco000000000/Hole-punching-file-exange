@@ -1,17 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using MySql.Data.MySqlClient;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using System.Net.Sockets;
+﻿using System.Text;
 using Newtonsoft.Json;
+
 namespace WinFormsApp1
 {
     public partial class Form4 : Form
@@ -21,11 +10,14 @@ namespace WinFormsApp1
         string codice_peer;
         string utente_peer;
         List<string> lista;
+
         List<Form4> listaForm = new List<Form4>();
+        bool primo;
         string serverURL = "http://localhost:81";
 
+        private Form4 parent;
 
-        public Form4(string username, string id, string id_peer, string username_peer, List<string> elenco)
+        public Form4(string username, string id, string id_peer, string username_peer, List<string> elenco, bool first, Form4 padre)
         {
             InitializeComponent();
             utente = username;
@@ -33,12 +25,21 @@ namespace WinFormsApp1
             codice_peer = id_peer;
             utente_peer = username_peer;
             lista = elenco;
+            primo = first;
+            this.parent = padre;
+            this.FormClosed += new FormClosedEventHandler(Form2_FormClosed);
+
         }
 
-        private void listView2_SelectedIndexChanged(object sender, EventArgs e)
+        private void Form2_FormClosed(object sender, FormClosedEventArgs e)
         {
-
+            if (this.parent != null)
+            {
+                this.parent.Visible = true;
+                this.parent.Close();
+            }
         }
+
         private static void Estensione(ListViewItem it, FileInfo file)
         {
             switch (file.Extension)
@@ -87,18 +88,19 @@ namespace WinFormsApp1
         private async void Form4_Load(object sender, EventArgs e)
         {
             labelCodiceR.Text = utente_peer;
-            if (listaForm.Count == 0)
+            //dal booleano capisco se è un 
+            if (primo)
             {
-                buttonIndietro.Enabled = false;
                 buttonIndietro.Visible = false;
+                buttonIndietro.Enabled = false;
             }
             else
             {
-                buttonIndietro.Enabled = true;
                 buttonIndietro.Visible = true;
+                buttonIndietro.Enabled = true;
             }
-            // se passo la lista dei path come paramtro questo load si deve cancellare tutto. 
-            //e semplicememnte riempire la view facendo scorrere la lista di path ogni stringa
+
+            //eriempire la view facendo scorrere la lista di path ogni stringa
             foreach (string line in lista)
             {
                 FileInfo f = new FileInfo(line);
@@ -106,48 +108,9 @@ namespace WinFormsApp1
                 item.SubItems.Add(f.FullName);
                 Estensione(item, f);
                 listView2.Items.Add(item);
-             
+
             }
 
-            // //commento tutto per testare il riempimento con lista passata dal form precedente.
-            //     var data = new Dictionary<string, object>();
-            //         data["username"]=utente;
-            //         data["code"]=codice;
-            //         data["peer_username"]=utente_peer;
-            //         data["peer_codice"]=codice_peer;
-            //         data["query"]=""; // non è ne download ne un click sulla cartella  --> devo richiedere i file condivisi 
-            //         //dalla persona con username "utente" e con codice "codice".
-            //         //data["paths"]= File.ReadAllText("MyFile.txt");
-
-            //         var json = JsonConvert.SerializeObject(data);
-            //         var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            //         using var client = new HttpClient();
-            //         var response = await client.PostAsync(serverURL, content);
-            //         // devo avere tornata la lista dei path  in modo tale da riempire la listview2
-
-            //         if (response.IsSuccessStatusCode)
-            //         {
-            //             Console.WriteLine("Dati inviati con successo.");
-            //         }
-            //         else
-            //         {
-            //             Console.WriteLine($"Errore nell'invio dei dati: {response.StatusCode}");
-            //         }
-
-
-
-            /*  StreamReader sr = new StreamReader("MyFile.txt");
-
-              while (!sr.EndOfStream)
-              {
-                 FileInfo f= new FileInfo(sr.ReadLine());
-                  ListViewItem item = new ListViewItem(f.Name);
-                  item.SubItems.Add(f.FullName);
-                  Estensione(item, f);
-                  listView2.Items.Add(item);
-              }
-              sr.Close(); */
 
         }
 
@@ -186,11 +149,11 @@ namespace WinFormsApp1
                 // vedere cosa risponde  e notificare se ci sono errori
                 if (response.IsSuccessStatusCode)
                 {
-                    MessageBox.Show("Dati inviati con successo.");
+                    MessageBox.Show("Download eseguito con successo.");
                 }
                 else
                 {
-                    MessageBox.Show($"Errore nell'invio dei dati: {response.StatusCode}");
+                    MessageBox.Show($"Errore nella connessione {response.StatusCode}");
                 }
 
             }
@@ -206,7 +169,7 @@ namespace WinFormsApp1
             FileInfo f = new FileInfo(listView2.SelectedItems[0].SubItems[1].Text.ToString());
             if (f.Extension == "")
             {
-                MessageBox.Show("selezionata una cartella");
+                //MessageBox.Show("selezionata una cartella");
                 //quindi dovrebbe  partire una richiesta post per avere 
                 //i nomi dei file contenuti in questa cartella
                 //una volta ottenuti aggiornare la schermata solo con quei file , 
@@ -230,58 +193,47 @@ namespace WinFormsApp1
 
                 if (response.IsSuccessStatusCode)
                 {
-                    MessageBox.Show(response.ToString());
+                    //MessageBox.Show(response.ToString());
                     string result = response.Content.ReadAsStringAsync().Result;
-                    MessageBox.Show(result);
+                    // MessageBox.Show(result);
                     dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";
-                    // if (obj.error != null)
-                    //     MessageBox.Show("si è verificato un errore " + obj.error);
-                    // if (obj.ok != null)
-                    //     MessageBox.Show("questo :" + obj.ok); //capire se ha ok come chiave
 
-            //String[] lista1 = obj.ok.ToObject<string[]>();
-            List<string> lista1 = obj.ToObject<List<string>>();  
-                //devo vedere quale è la chiave perchè non è ok
-            this.Visible = false;
-            Form4 form4 = new Form4(utente, codice, codice_peer, utente_peer, lista1);
-            listaForm.Add(form4);
-            //aggiungere come parametro la lista dei path se gia restituita dalla richiesta ?
-            form4.Show();
-            this.Visible = true;
 
-                    // --> svuotare la listview corrente e riempirla con i nuovi file? 
-                    //pero problema nel tornare indietro
-                    //------
+
+                    List<string> lista1 = obj.ToObject<List<string>>();
+
+                    Form4 form4 = new Form4(utente, codice, codice_peer, utente_peer, lista1, false, this);
+
+
+                    this.Visible = false;
+                    form4.ShowDialog();
+
+
                     //altra idea sarebbe modificare il form4 e fare in modo  che abbi nel cotruttore una lista di stringhe, cioè i path
                     //quindi il form3 quando lo invoca la prima volta fornira pure questa lista , che dovrebbe essere risposta 
                     //alla richiesta post che comunque bisogna fare per vedere se esiste l'utente 
                     //con determinato username e determinato codice random. quindi qui si creerebbe un nuovo form4 con stabolta passata 
                     //questa nuova lista di stringhe, il vecchio verebbe reso invisbile e reso dinuovo 
                     //visbile solo dopo la chiusura dell'altro
+                    //inoltre aggiunto un booleano nel costruttore per il pulante idetro e  il riferimetno al form4 che sta generando un ulteriore form4
                 }
                 else
                 {
-                    MessageBox.Show($"Errore nell'invio dei dati: {response.StatusCode}");
+                    MessageBox.Show($"Errore nella comunicazione {response.StatusCode}");
                 }
 
             }
         }
 
-        private void Form4_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            if(listaForm.Count>0)
-             foreach (Form4 f in listaForm)
-             {
-                 //forse piu coretto fare un form 5 e scorrere un lista di essi
-                 f.Close();
-             }
-            
-        }
-
         private void buttonIndietro_Click(object sender, EventArgs e)
         {
-            listaForm.Remove(this);
+            //  listaForm.Remove(this);
+            this.parent.Show();
+            this.parent = null;
             this.Close();
+
+            //si rende visibile il padre , e per evitare che si chiudano tutti i form 
+            //secondo la close imposto this.parent a null e poi chiudo il form corrente
         }
     }
 }
