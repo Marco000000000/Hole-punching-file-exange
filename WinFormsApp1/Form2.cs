@@ -1,25 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
+﻿
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-using System.Net;
-using MySql.Data.MySqlClient;
-using System.Data.Common;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
-using System.Net.Sockets;
 using Newtonsoft.Json;
 
 namespace WinFormsApp1
 {
     public partial class Form2 : Form
     {
-        string serverURL = "151.74.146.179:80";
+        //string serverURL = "151.74.146.179:80";
+        string serverURL= "http://127.0.0.1:80";
         public Form2()
         {
             InitializeComponent();
@@ -89,8 +77,9 @@ namespace WinFormsApp1
 
                     using HttpClient client = new HttpClient();
                     var response = await client.PostAsync(serverURL + "/signin", data);
-
+                    MessageBox.Show(response.ToString());
                     string result = response.Content.ReadAsStringAsync().Result;
+                    MessageBox.Show(result.ToString());
                     try
                     {
                         dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";

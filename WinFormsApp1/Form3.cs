@@ -1,27 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Security.Cryptography;
+﻿using System.Diagnostics;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-using Microsoft.VisualBasic.ApplicationServices;
-using MySql.Data.MySqlClient;
-using static System.Windows.Forms.LinkLabel;
-using System.Net.Sockets;
 using Newtonsoft.Json;
-using Microsoft.VisualBasic;
 
 namespace WinFormsApp1
 {
     public partial class Form3 : Form
     {
-        //string numero;
+        Process process;
         string id_random;
         string username;
         string serverURL = "http://127.0.0.1:81";
@@ -159,16 +144,16 @@ private async void InvioDati(){
             using HttpClient client = new HttpClient();
             //var response = await client.PostAsync(serverURL+"/", content);
             var response = await client.PostAsync(serverURL+"/", content);
-            MessageBox.Show(response.ToString());
+     // MessageBox.Show(response.ToString());
             // vedere se ritorna qualcosa questa richiesta e notificare in caso di errore
               string result = response.Content.ReadAsStringAsync().Result;
-              MessageBox.Show(result);
+      // MessageBox.Show(result);
               
                dynamic obj = JsonConvert.DeserializeObject(result)??"nullo";
-                    if (obj.error != null)
-                    MessageBox.Show("si è verificato un errore " + obj.error);
+                   
                     if(obj.ok !=null)
-                    MessageBox.Show("questo :"+obj.ok);
+                      MessageBox.Show(obj.ok); //vedo se i dati sono arrivati a python , mi risponde con i dati che gli sono arrivati
+                      
                     //start_share risponde con ok: i path dei file
                     
                    
@@ -179,8 +164,18 @@ private async void InvioDati(){
 }
    private  void Form3_Load(object sender, EventArgs e)
         {
-           labelCodice.Text = id_random; // dovrei mettere ciò che mi restituisce il database
 
+             ProcessStartInfo start = new ProcessStartInfo();
+            start.FileName = "python"; // percorso dell'interprete python
+            start.Arguments = string.Format("{0} {1}", "../pythonModule/tcp_client.py", ""); // percorso del mio scrip da eseguire
+            start.UseShellExecute = false; 
+            start.RedirectStandardOutput = true;  //per motivi di debug da metter a false nella versione finale
+            process = Process.Start(start);
+            if (process == null)
+                Environment.Exit(1);
+
+            labelCodice.Text = id_random; // dovrei mettere ciò che mi restituisce il database
+            labelUsername1.Text = username;
             //fare magari un if se il file MyFile.txt non esiste allora crealo
             if (!File.Exists("MyFile.txt"))
             {
@@ -221,7 +216,7 @@ private async void InvioDati(){
 
                 // devo compilare entrambi i campi e il campo realtivo all' username deve essere diverso dal mio
                 //a questo pinto posso creare la richiesta POST con username, codice, username_peer, codice_peer, operation 
-                 MessageBox.Show("preparo la richiesta ");
+               //  MessageBox.Show("preparo la richiesta ");
                 var data = new Dictionary<string, object>();
                 data["username"]=username;
                 data["code"]=id_random;
@@ -241,13 +236,13 @@ private async void InvioDati(){
                 try{
                 using HttpClient client = new HttpClient();
                 var response = await client.PostAsync(serverURL+"/", content);
-                MessageBox.Show(response.ToString());
+             //   MessageBox.Show(response.ToString());
                 //dovrei avere in risposta una lista  passarla direttamnte al form4 per evitare 
                 //di fare un'ulteriore richiesta post li nella sua load.
                 string result = response.Content.ReadAsStringAsync().Result;
-                MessageBox.Show(result);
+               // MessageBox.Show(result);
                 dynamic obj = JsonConvert.DeserializeObject(result)??"nullo";
-                // if (obj.error != null)
+                 //if (obj.error != null)
                 // MessageBox.Show("si è verificato un errore " + obj.error);
                 // if(obj.ok !=null){
                 // MessageBox.Show("questo :"+obj.ok);}
@@ -256,15 +251,17 @@ private async void InvioDati(){
                     // la risposta alla richiesta post deve essere 
                     //l'elenco dei path dell'utente con il codice e username scritti nei campi
                 List<string> lista1 = obj.ToObject<List<string>>();
-                    //funziona si come stringa che come string[]
-                    // List<string>lista1= File.ReadAllLines("MyFile.txt").ToList();
-                     Form4 form4 = new Form4(username,id_random,textCodice.Text,textUserRicevitore.Text,lista1); 
+                if(lista1[0].Equals("/error")){
+                    MessageBox.Show("Dati errati o utente non online ");
+                }else{
+                   // List<string>lista1= File.ReadAllLines("MyFile.txt").ToList();
+                     Form4 form4 = new Form4(username,id_random,textCodice.Text,textUserRicevitore.Text,lista1,true,null); 
                      //aggiungere come parametro la lista dei path se gia restituita dalla richiesta ?
                      list.Add(form4);
                      form4.Show();
                
-                    // MessageBox.Show("errore nel invio dati");
-                //}
+                   
+                }
 
             }catch(Exception ex){
                 MessageBox.Show(ex.Message);
@@ -280,22 +277,7 @@ private async void InvioDati(){
         
          }        
     
-                    //si dovrebbe fare il controllo sul campo status del database facendo un querry usando 
-                    //text.codice com id_random a cui voflio collegarmi
-                    //se status è 1 allora si apre il form4, in caso contrario cioè se status è 0 oppure 
-                    //se i caratteri inserito non corrispondo a nessun utente allora stampare errore
-                    // Form4 form4 = new Form4(textCodice.Text);
-                     // list.Add(form4);
-                    //  form4.Show();
-         
-                  // devo fare in modo che il codice inserito sia mandato a go
-                    // che dirà se corrisponderà a un id di un determinato utente,
-                   // inoltre per poter far partire la richiesta esso deeve avere status uguale ad 1,
-                   // se corrisponde si apre la finestra ricevitore di quel utente
-                    // dopo che esso ha accettato la richiesta
-                    // quindi ricapitolando in input stringa alfanumerica di 4 cifre mandando a go mi ritornerà id dell'utente corrispondente
-                    // si fa la querry per vedere se ha status = 1 e se lo ha si avvia la richiesta per accedere alla sua schermata di condivisione
-        
+                  
 
         private void onClickVisualizza(object sender, EventArgs e)
         {
@@ -341,6 +323,11 @@ private async void InvioDati(){
                 {
                     f.Close(); 
                 }
+             if (process != null)
+            {
+                process.Kill();
+                process = null;
+            }    
           
         }
     }
