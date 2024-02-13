@@ -740,7 +740,6 @@ class serverConnector:
                 logger.info('start thread %s', name)
                 threads[name].start()
             #aspetto che almeno un thread riesca e in caso contrario ritorno il fallimento
-            timer=time.time()
             while threads:
                 keys = list(threads.keys())
                 for name in keys:
@@ -759,9 +758,11 @@ class serverConnector:
                     #     threads[name].st
                     #     break
             #Operazione utilizzata per non avere continuo ritardo in caso di fallimento
+            self.__closeHole__()
             self.requestWithOutHole=5
             return ["/error"]
         except:
+            self.__closeHole__()
             self.requestWithOutHole=5
             return ["/error"]
     #funzione che implementa l'accettazione  del primo messaggio
@@ -851,7 +852,7 @@ class serverConnector:
             return ["/error"]
         while not self.ansReady and self.holeCreated:
             time.sleep(1)
-            print("waiting"+str(self.ansReady))
+            logger.info("waiting"+str(self.ansReady))
         else:
             ret=self.ans
             self.ansReady=False
@@ -1093,9 +1094,11 @@ class clientConnector:
                         logger.info("116:self.holeCreated")
                         return "True"
             #Operazione utilizzata per non avere continuo ritardo in caso di fallimento
+            self.__closeHole__()
             self.requestWithOutHole=5
             return ["/error"]
         except:
+            self.__closeHole__()
             self.requestWithOutHole=5
             return ["/error"]
     #funzione che implementa l'accettazione  del primo messaggio
