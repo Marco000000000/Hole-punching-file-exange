@@ -15,8 +15,8 @@ logger = logging.getLogger('client')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 DOWNLOADDIRECTORY=os.getenv("downloadDirectory","../downloadDirectory")
-TURNSERVER="localhost" #server di gestione delle richieste di controllo e scambio messaggi tramite server
-HOLESERVER="localhost" #server gestore dello scambio degli indirizzi
+TURNSERVER="192.168.80.22" #server di gestione delle richieste di controllo e scambio messaggi tramite server
+HOLESERVER="192.168.80.22" #server gestore dello scambio degli indirizzi
 #funzione ausiliare per vedere se si sta richiedendo un path valido
 def stringInsideAList(path,paths):
     for temp in paths:
@@ -654,7 +654,7 @@ class Client(namedtuple('Client', 'conn, pub, priv')):
 
 class serverConnector:
     #classe creata allo scopo di incampsulare le operazioni del nostro "protocollo"
-    def __init__(self,user, code, role):#separare in classe Client e classe server
+    def __init__(self,user, code):#separare in classe Client e classe server
         self.user = user
         self.code = code
         #client

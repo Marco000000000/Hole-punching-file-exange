@@ -35,7 +35,7 @@ def handleMessage():
     if query_type=="download":
 
         if clientconnector is None:
-            clientconnector=clientConnector(user,code,"client")
+            clientconnector=clientConnector(user,code)
         peer_username=data["peer_username"]
         peer_code=data["peer_code"]
         print("path: "+path.split(os.sep)[-1][0])
@@ -48,13 +48,13 @@ def handleMessage():
     elif query_type=="names":
 
         if clientconnector is None:
-            clientconnector=clientConnector(user,code,"client")
+            clientconnector=clientConnector(user,code)
         peer_username=data["peer_username"]
         peer_code=data["peer_code"]
         return clientconnector.handleOperation(peer_username,peer_code,path,3)
     elif query_type=="start_share":
         if serverconnector is None:
-            serverconnector=serverConnector(user,code,"server")
+            serverconnector=serverConnector(user,code)
             serverconnector.__startServer__()
         tempPaths=[]
         for tempPath in path:
