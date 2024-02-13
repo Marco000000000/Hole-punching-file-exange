@@ -10,7 +10,6 @@ namespace WinFormsApp1
         string id_random;
         string username;
         string serverURL = "http://127.0.0.1:80";
-        List<Form4> list = new List<Form4>();
 
         public Form3(string codice, string nome)
         {
@@ -60,10 +59,10 @@ namespace WinFormsApp1
             {
 
                  string[] readText = File.ReadAllLines("MyFile.txt");
-                // 2. pulisco il file
+                //  pulisco il file
                 File.WriteAllText("MyFile.txt", String.Empty);
 
-                // 3. riccarico il file senza il path cancellato
+                //  riccarico il file senza il path cancellato
                 using (StreamWriter writer = new StreamWriter("MyFile.txt"))
                 {
                     foreach (string s in readText)
@@ -142,7 +141,7 @@ private async void InvioDati(){
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             try{
             using HttpClient client = new HttpClient();
-            //var response = await client.PostAsync(serverURL+"/", content);
+            
             var response = await client.PostAsync(serverURL+"/", content);
      // MessageBox.Show(response.ToString());
             // vedere se ritorna qualcosa questa richiesta e notificare in caso di errore
@@ -158,7 +157,7 @@ private async void InvioDati(){
                     
                    
             }catch(Exception e ){
-                MessageBox.Show(e.Message);
+                MessageBox.Show("eccezzione: "+e.Message);
             }
             
 }
@@ -182,8 +181,8 @@ private async void InvioDati(){
                 using (StreamWriter sw = File.CreateText("MyFile.txt")) { }
                 return;
             }
-            Thread.Sleep(1000);
-            InvioDati(); 
+            Thread.Sleep(1000); // dare un po di tempo per fare avviare python
+            InvioDati();  //richiesta start share per inviare i path condivisi.
         
            // ---------------
               // dovrei caricare  i precedenti file che l'utente rende disponivili
@@ -211,20 +210,20 @@ private async void InvioDati(){
 
         private async void onClickRicevitore(object sender, EventArgs e)
         {
-
+                //verifico se entrambi i campi non sono vuotu e che non si prova a conllegarsi con se stesso
             if (textCodice.Text.Length > 0  && textUserRicevitore.Text.Length > 0 && textUserRicevitore.Text != username)
             {
 
                 // devo compilare entrambi i campi e il campo realtivo all' username deve essere diverso dal mio
-                //a questo pinto posso creare la richiesta POST con username, codice, username_peer, codice_peer, operation 
+                //a questo pinto posso creare la richiesta POST con username, codice, username_peer, codice_peer, query 
                //  MessageBox.Show("preparo la richiesta ");
                 var data = new Dictionary<string, object>();
                 data["username"]=username;
                 data["code"]=id_random;
                 data["peer_username"]=textUserRicevitore.Text;
                 data["peer_code"]=textCodice.Text;
-                data["query"]="names"; // non è ne download ne un click sulla cartella 
-                data["path"]="/";
+                data["query"]="names"; 
+                data["path"]="/"; //specifico perchè è la richiesta di tutti i path condicisi del utente con determianto peer_username e peer_codice
 
      //provo con una richiesta start share per vedere se il form 4 viene costruito bene passando una lista
                 // data["query"]="start_share";
@@ -234,7 +233,7 @@ private async void InvioDati(){
 
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                try{
+         try{
                 using HttpClient client = new HttpClient();
                 var response = await client.PostAsync(serverURL+"/", content);
              //   MessageBox.Show(response.ToString());
@@ -258,8 +257,8 @@ private async void InvioDati(){
                    // List<string>lista1= File.ReadAllLines("MyFile.txt").ToList();
                      Form4 form4 = new Form4(username,id_random,textCodice.Text,textUserRicevitore.Text,lista1,true,null); 
                      //aggiungere come parametro la lista dei path se gia restituita dalla richiesta ?
-                     list.Add(form4);
-                     form4.Show();
+                    
+                     form4.ShowDialog();
                
                    
                 }
@@ -319,11 +318,7 @@ private async void InvioDati(){
 
         private void Form3_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if(list.Count>0)
-            foreach(Form4 f in list)
-                {
-                    f.Close(); 
-                }
+            
              if (process != null)
             {
                 process.Kill();

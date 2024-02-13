@@ -8,7 +8,7 @@ namespace WinFormsApp1
     {
        // string serverURL = "http://151.74.146.179:80";
         string serverURL="http://127.0.0.1:80";
-        Process process;
+        
         public Form1()
         {
             InitializeComponent();
@@ -19,15 +19,14 @@ namespace WinFormsApp1
         {
         
             string id_random;
-            var dati = new Dictionary<string, object>();
+            var dati = new Dictionary<string, string>();
             lblError.Text = string.Empty;
 
             if (textName.Text.Equals("") || textPassword.Text.Equals(""))
                 lblError.Text = "Inserire le credenziali ";
             else
             {
-                //  Form3 form3 = new Form3(id_random, textName.Text); 
-                // form3.Show();
+                
                 dati["username"] = textName.Text;
                 dati["password"] = textPassword.Text;
                 textName.Text = string.Empty;

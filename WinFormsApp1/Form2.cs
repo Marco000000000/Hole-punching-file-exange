@@ -13,16 +13,11 @@ namespace WinFormsApp1
             InitializeComponent();
         }
 
-        private void Form2_Load(object sender, EventArgs e)
-        {
-
-        }
-
         private async void OnClickBottonRegister(object sender, EventArgs e)
         {
             //bisogna togliere la querry al database perchè fatta da go, 
             //devo fare la richiesta a go passando il nome e la password dopo aver fatto i controlli
-            //sulla forma lato client, stessa cosa nel form1 per un
+            //sulla forma lato client, stessa cosa nel form1 
           
             bool flag = false;
             lblError.Text = string.Empty;
@@ -31,8 +26,7 @@ namespace WinFormsApp1
 
             
             
-            //devo costruire la querry che mi ritorno
-            //la lista di nomi presenti nel database e verificare se il nome inserito è già presente
+            //controllo per vere se i campit sono vuoti
 
             if (textName.Text.Equals("") && textPassword.Text.Equals("")) {
                 lblError.Text = "Inserisci entrambi i campi ";
@@ -56,12 +50,12 @@ namespace WinFormsApp1
             
             
             // fare login e registrazione in go
-            // richiesta a go per avere assegna un id random  da aggiungere contestualmente agli altri dati
+            // richiesta a go per avere assegnato un id random  da aggiungere contestualmente agli altri dati
 
             if (flag == false)
             {
                 //---------------
-                //invio al database nome, cog e per proseguire la registrazione
+                //invio al database nome, pass  per proseguire la registrazione
                 //se tutto va bene chiudo la scheda, se dovessero esserci problemi,
                 //ad esempio utente gia registrato, password che non rispetta delle regole specifiche
                 //notificare l'errore

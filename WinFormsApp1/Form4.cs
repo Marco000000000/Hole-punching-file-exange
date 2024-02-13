@@ -11,7 +11,6 @@ namespace WinFormsApp1
         string utente_peer;
         List<string> lista;
 
-        List<Form4> listaForm = new List<Form4>();
         bool primo;
         string serverURL = "http://127.0.0.1:80";
 
@@ -27,11 +26,11 @@ namespace WinFormsApp1
             lista = elenco;
             primo = first;
             this.parent = padre;
-            this.FormClosed += new FormClosedEventHandler(Form2_FormClosed);
+            this.FormClosed += new FormClosedEventHandler(Form4_FormClosed);
 
         }
 
-        private void Form2_FormClosed(object sender, FormClosedEventArgs e)
+        private void Form4_FormClosed(object sender, FormClosedEventArgs e)
         {
             if (this.parent != null)
             {
@@ -88,7 +87,7 @@ namespace WinFormsApp1
         private async void Form4_Load(object sender, EventArgs e)
         {
             labelCodiceR.Text = utente_peer;
-            //dal booleano capisco se è un 
+            //dal booleano capisco se è il primo form4 o uno creto con doppio click in una cartella 
             if (primo)
             {
                 buttonIndietro.Visible = false;
@@ -126,6 +125,7 @@ namespace WinFormsApp1
             }
         }
 
+            //per il download di un elemento
         private async void buttonSeleziona_Click(object sender, EventArgs e)
         {
             if (listView2.SelectedItems.Count > 0)
@@ -143,26 +143,28 @@ namespace WinFormsApp1
 
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                
-                using HttpClient client = new HttpClient();
-                var  response = await client.PostAsync(serverURL, content);
-                // vedere cosa risponde  e notificare se ci sono errori
-                string result = response.Content.ReadAsStringAsync().Result;
-                    // MessageBox.Show(result);
-                dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";
-                  
 
-                List<string> lista1 = obj.ToObject<List<string>>();
-                if(lista1.Count!=0&&(lista1[0].Equals("/error")||lista1[0].Equals("error"))){
-                    MessageBox.Show("errore generico"+lista1[0]);
-                    return;
-                }
-                else 
-                {
+                try{
+                    using HttpClient client = new HttpClient();
+                    var  response = await client.PostAsync(serverURL, content);
+                    // vedere cosa risponde  e notificare se ci sono errori
+                    string result = response.Content.ReadAsStringAsync().Result;
+                        // MessageBox.Show(result);
+                    dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";
+                    
+
+                    List<string> lista1 = obj.ToObject<List<string>>();
+                    if(lista1.Count!=0&&(lista1[0].Equals("/error")||lista1[0].Equals("error"))){
+                        MessageBox.Show("errore generico"+lista1[0]);
+                        return;
+                    }
+                    
                     MessageBox.Show("Download eseguito con successo.");
-                }
-                
 
+
+                }catch(Exception ex){
+                MessageBox.Show("eccezzione: "+ex.Message);
+                }
             }
             else
             {
@@ -174,13 +176,14 @@ namespace WinFormsApp1
         {
             // MessageBox.Show(listView2.SelectedItems[0].SubItems[1].Text.ToString());
             FileInfo f = new FileInfo(listView2.SelectedItems[0].SubItems[1].Text.ToString());
+            //controllo se è stata selezionata una cartella
             if (f.Extension == "")
             {
                 //MessageBox.Show("selezionata una cartella");
+
                 //quindi dovrebbe  partire una richiesta post per avere 
                 //i nomi dei file contenuti in questa cartella
-                //una volta ottenuti aggiornare la schermata solo con quei file , 
-                //trovare modo per tornare indietro
+                //una volta ottenuti aggiornare la schermata solo con quei file, 
 
                 var data = new Dictionary<string, object>();
                 data["username"] = utente;
@@ -192,20 +195,19 @@ namespace WinFormsApp1
 
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                using var client = new HttpClient();
+                try{
+                using HttpClient client = new HttpClient();
                 var response = await client.PostAsync(serverURL, content);
                 // questa richiesta mi deve tornare i percorsi di tutti i file contenuti 
                 //nella cartella a cui si è fatto doppio click
 
                 if (response.IsSuccessStatusCode)
                 {
-                    //MessageBox.Show(response.ToString());
+                    MessageBox.Show(response.ToString());
                     string result = response.Content.ReadAsStringAsync().Result;
-                    // MessageBox.Show(result);
+                     //MessageBox.Show(result);
                     dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";
                   
-
                     List<string> lista1 = obj.ToObject<List<string>>();
                     if(lista1.Count!=0&&(lista1[0].Equals("/error")||lista1[0].Equals("error"))){
                             MessageBox.Show("errore generico"+lista1[0]);
@@ -213,11 +215,10 @@ namespace WinFormsApp1
                     else{
                     Form4 form4 = new Form4(utente, codice, codice_peer, utente_peer, lista1, false, this);
 
-
                     this.Visible = false;
                     form4.ShowDialog();
 
-
+                    }
                     //altra idea sarebbe modificare il form4 e fare in modo  che abbi nel cotruttore una lista di stringhe, cioè i path
                     //quindi il form3 quando lo invoca la prima volta fornira pure questa lista , che dovrebbe essere risposta 
                     //alla richiesta post che comunque bisogna fare per vedere se esiste l'utente 
@@ -226,10 +227,11 @@ namespace WinFormsApp1
                     //visbile solo dopo la chiusura dell'altro
                     //inoltre aggiunto un booleano nel costruttore per il pulante idetro e  il riferimetno al form4 che sta generando un ulteriore form4
                 }
-                }
-                else
-                {
+                else{
                     MessageBox.Show($"Errore nella comunicazione {response.StatusCode}");
+                }
+                }catch(Exception ex){
+                    MessageBox.Show("eccezzione:"+ex.Message);
                 }
 
             }
@@ -237,7 +239,6 @@ namespace WinFormsApp1
 
         private void buttonIndietro_Click(object sender, EventArgs e)
         {
-            //  listaForm.Remove(this);
             this.parent.Show();
             this.parent = null;
             this.Close();
