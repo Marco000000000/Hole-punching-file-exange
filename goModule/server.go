@@ -95,21 +95,29 @@ func HandleHoleConnect(conn net.Conn) {
 	//fmt.Println(request)
 	var connTime *Client
 	var ok bool
-	fmt.Println("request.Peer_username ", request.Peer_username)
-	fmt.Println("request.Username ", request.Username)
-
+	fmt.Println("request.Peer_username ", request.Peer_username+request.Peer_code)
+	fmt.Println("request.Username ", request.Username+request.Code)
+	for name := range clients {
+		fmt.Printf("chiave %s:\n", name)
+	}
 	if request.Peer_username != "" {
 
 		connTime, ok = clients[request.Peer_username+request.Peer_code]
 
 	} else {
 		cont := 0
-		for !ok || cont > 3 {
+		for !ok {
 			connTime, ok = clients[request.Username+request.Code]
+			for name := range clients {
+				fmt.Printf("chiave %s:\n", name)
+			}
 			time.Sleep(1 * time.Second)
 			cont++
-			return
+			if cont > 3 {
+				return
+			}
 		}
+
 	}
 	if ok {
 		clientsMutex.Lock()

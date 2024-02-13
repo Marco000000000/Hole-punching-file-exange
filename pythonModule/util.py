@@ -882,13 +882,13 @@ class serverConnector:
         return "Sent DirectoryFiles"
         
     #utilizzo di un messaggio vuoto per mantenere la connessione
-    def __handleHearthBit__(self,s,role):
+    def __handleHearthBit__(self,s):
         send_msg(s,b'')
         return "Sent HeartBit"
         
 
     #gestore della connessione dopo aver aperto la connessione con l'hole punching
-    def __handleHole__(self,s,role):
+    def __handleHole__(self,s):
         self.__mutex__.acquire()
         try:
             logger.info("317:self.holeCreated=True")
@@ -914,15 +914,15 @@ class serverConnector:
                     continue
                 elif msg[1]=="file":
                     timer=time.time()
-                    print(self.__handleFileDownload__(s,msg[0],role))
+                    print(self.__handleFileDownload__(s,msg[0]))
                 elif msg[1]=="directory":
                     timer=time.time()
                     if msg[0]=="/":
-                        self.__handleFirstMessage__(s,role)
+                        self.__handleFirstMessage__(s)
                     else:
-                        self.__handleDirectoryFiles__(s,msg[0],role)
+                        self.__handleDirectoryFiles__(s,msg[0])
                 elif msg[1]=="heartBit":
-                    self.__handleHearthBit__(s,role)
+                    self.__handleHearthBit__(s)
             except Exception as e:
                 logger.info("funzione"+"makeThing parte server")
 
@@ -1254,12 +1254,13 @@ class clientConnector:
         send_msg(s,(path+"?directory").encode("utf-8"))
         temp=recv_msg(s)
         if temp is None:
-            return None
+            return ["error"]
         return(json.loads(temp.decode("utf-8")))
     
     #utilizzo di un messaggio vuoto per mantenere la connessione
     def __handleHearthBit__(self,s):
-        send_msg(s,("/"+"?heartBit").encode("utf-8"))
+        send_msg(s,("/"+"?heartBit").encode
+                 ("utf-8"))
         return recv_msg(s)    
 
     #gestore della connessione dopo aver aperto la connessione con l'hole punching
@@ -1299,7 +1300,7 @@ class clientConnector:
                         if type(temp)==list:
                             self.ans=temp
                         else:
-                            self.ans=self.ans=list(temp.keys())
+                            self.ans=list(temp.keys())
                         
                         self.ansReady=True
                         #return parameter
