@@ -156,6 +156,7 @@ func garbageCollector() {
 			for forDeleteKey, requestForUser := range waitingRequests {
 				for i := 0; i < len(requestForUser.link); i++ {
 					if time.Now().Second()-requestForUser.timer[i].Second() > 10 {
+						fmt.Println("rimozione di vecchie richieste")
 						RemoveKeyFromWaitingRequests(forDeleteKey)
 					}
 				}

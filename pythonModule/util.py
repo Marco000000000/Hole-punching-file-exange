@@ -58,7 +58,7 @@ def send_msg(sock, msg):
 def recvall(sock, n):
     # Helper function to recv n bytes or return None if EOF is hit
     data = b''
-
+    sock.settimeout(5)
     while len(data) < n:
         packet = sock.recv(n - len(data))
         if not packet:
@@ -70,9 +70,13 @@ def recvall(sock, n):
 def recv_msg(sock):
     # Read message length and unpack it into an integer
     raw_msglen = recvall(sock, 4)
+    
     if not raw_msglen:
         return None
+
     msglen = struct.unpack('>I', raw_msglen)[0]
+    logging.info("msg Len=%s",str(msglen))
+
     # Read the message data
     return recvall(sock, msglen)
 
@@ -728,6 +732,7 @@ class serverConnector:
                 logger.info('start thread %s', name)
                 threads[name].start()
             #aspetto che almeno un thread riesca e in caso contrario ritorno il fallimento
+            timer=time.time()
             while threads:
                 keys = list(threads.keys())
                 for name in keys:
@@ -742,6 +747,9 @@ class serverConnector:
                     if self.holeCreated:
                         logger.info("116:self.holeCreated")
                         return "True"
+                    # if time.time()-timer>5:
+                    #     threads[name].st
+                    #     break
             #Operazione utilizzata per non avere continuo ritardo in caso di fallimento
             self.requestWithOutHole=5
             return ["/error"]
@@ -1009,8 +1017,9 @@ class clientConnector:
             if self.requestWithOutHole>0:
                 self.requestWithOutHole-=1
                 return ["/error"]
-            self.__getPermission__(peer_username,peer_code)
-        
+            control=self.__getPermission__(peer_username,peer_code)
+            if "error" in control or "/error" in control or control is None:
+                return ["/error"]
             sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             data={
@@ -1396,7 +1405,7 @@ class clientConnector:
             #print("newPath:")
             try:
                 temp=response.json()
-                if "/error" in temp or "error" in temp:
+                if "/error" in temp or "error" in temp or response.content==None:
                     return ["error"]
             except:
                 pass
@@ -1413,7 +1422,11 @@ class clientConnector:
 
     def __turnFilenames__(self,data):
         response= requests.post( "http://"+TURNSERVER+"/request", json=data)
-        return response.json()
+        if response.content!=None:
+            return response.json()
+        else:
+            return ["error"]
+
     #richiesta di sincronizzazione dei file dentro una cartella tramite server 
 
     def __turnSincronizeDirectory__(self,data,subPath=""):
@@ -1476,7 +1489,7 @@ class clientConnector:
     #gestisce il flusso e sceglie se passare l'operazione tramite il server o usando l'hole punch
     def handleOperation(self,peer_username,peer_code,path,operation):
         #versione con il solo server
-        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+        #return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
         logging.info("self.holeCreated=_%s",str(self.holeCreated))
         try:
             if self.holeCreated:
