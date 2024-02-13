@@ -2,80 +2,45 @@ package main
 
 import (
 	"database/sql"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"unicode"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// struttura e mutex associato per l'operazione di hole punch
 var clientsMutex sync.Mutex
 var clients = make(map[string]*Client)
+
+// collegamento al db
 var db *sql.DB
 
-type UserLogin struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-type User struct {
-	Username string `json:"username"`
-	Code     string `json:"code"`
-}
-type Request struct {
-	Username      string `json:"username"`
-	Code          string `json:"code"`
-	Peer_username string `json:"peer_username"`
-	Peer_code     string `json:"peer_code"`
-	Operation     int    `json:"operation"`
-	Path          string `json:"path"`
-}
-type ForResponseData struct {
-	Channels   []http.ResponseWriter
-	Username   []string
-	Path       []string
-	Operations []int
-	link       []chan struct{}
-	timer      []time.Time
-}
-type hearthBitMessage struct {
-	Code      string `json:"code"`
-	Operation int    `json:"operation"`
-	Path      string `json:"path"`
-}
-type connectHandler struct {
-	channel http.ResponseWriter
-	closer  chan struct{}
-	timer   time.Time
-}
-type timeAndString struct {
-	text  string
-	timer time.Time
-}
+//timer globali per la gestione della memoria
 
+var waitingRequestsTimer time.Time = time.Now()
+var sendedRequestsTimer time.Time = time.Now()
+
+// struttura e mutex associato per la gestione della request
 var waitingRequests map[string]ForResponseData
 var waitingRequestsMutex sync.Mutex
+
+// struttura e mutex associato per la gestione delle richieste già restituite
 var sendedRequests map[string]connectHandler
 var sendedRequestsMutex sync.Mutex
+
+// struttura e mutex associato per la gestione dei permessi usati per l'hole punch
+
 var holeData map[string]timeAndString
 var holeMutex sync.Mutex
 
-type Client struct {
-	conn  net.Conn
-	pub   *net.TCPAddr
-	priv  *net.TCPAddr
-	timer time.Time
-}
-
+// funzione handler che implementa lo scambio degli indirizzi ip tra client se passano i controlli di sicurezza
 func HandleHoleConnect(conn net.Conn) {
 	msg := recvMsg(conn)
 	var request Request
@@ -173,6 +138,8 @@ func HandleHoleConnect(conn net.Conn) {
 	}
 
 }
+
+// funzione per la gestione della memoria che pulisce le strutture dati se restano richieste pendenti senza risposta
 func garbageCollector() {
 	for {
 		for key, value := range clients {
@@ -183,10 +150,24 @@ func garbageCollector() {
 				clientsMutex.Unlock()
 
 			}
+
+		}
+		if time.Now().Second()-waitingRequestsTimer.Second() > 10 {
+			for forDeleteKey, requestForUser := range waitingRequests {
+				for i := 0; i < len(requestForUser.link); i++ {
+					if time.Now().Second()-requestForUser.timer[i].Second() > 10 {
+						removeKeyFromWaitingRequests(forDeleteKey)
+					}
+				}
+			}
+			waitingRequestsTimer = time.Now()
 		}
 		time.Sleep(2 * time.Second)
+
 	}
 }
+
+// thread principale che accetta le richieste di hole punching
 func handlerHolePunching(host string, port int) {
 
 	listenAddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", host, port))
@@ -216,89 +197,10 @@ func handlerHolePunching(host string, port int) {
 	}
 }
 
-func keepNumbersAndDot(input string) string {
-	var result string
-
-	for _, char := range input {
-		if unicode.IsDigit(char) || char == '.' {
-			result += string(char)
-		}
-	}
-
-	return result
-}
-func recvMsg(conn net.Conn) []byte {
-	data := make([]byte, 4)
-	io.ReadFull(conn, data)
-	n := int(binary.BigEndian.Uint32(data))
-	fmt.Println("n=", n)
-	readBuff := make([]byte, n)
-	count := 0
-	for count < n {
-		readBytes, err := io.ReadFull(conn, readBuff)
-		fmt.Println("count:", count)
-
-		if err != nil && err != io.EOF {
-			if err != io.ErrUnexpectedEOF {
-				count += readBytes
-				fmt.Println("error count:", count)
-
-			}
-			break
-		}
-		count += readBytes
-	}
-
-	return readBuff
-}
-func sendMsg(conn net.Conn, msg []byte) error {
-	lengthBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(lengthBytes, uint32(len(msg)))
-	ms := append(lengthBytes, msg...)
-	n, err := conn.Write(ms)
-	fmt.Println("numero di byte spediti =", n)
-	fmt.Println("numero di byte da spedire =", len(msg)+4)
-
-	return err
-}
-
-func msgToAddr(data []byte) (*net.TCPAddr, error) {
-	// Implement msgToAddr logic as needed
-	addrStr := string(data)
-	parts := strings.Split(addrStr, ":")
-	fmt.Println(parts)
-	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid address format")
-	}
-
-	ip := parts[0]
-	ip = keepNumbersAndDot(ip)
-	fmt.Println(len(ip))
-	fmt.Println(ip)
-
-	port, err := strconv.Atoi(keepNumbersAndDot(parts[1]))
-	fmt.Println("port=", port)
-
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("net.TCPAddr{IP: net.ParseIP(ip), Port: port}", net.TCPAddr{IP: net.ParseIP(ip), Port: port})
-
-	return &net.TCPAddr{IP: net.ParseIP(ip), Port: port}, nil
-}
-
-func addrToMsg(addr *net.TCPAddr) []byte {
-	// Implement addrToMsg logic as needed
-	addrStr := fmt.Sprintf("%s:%d", addr.IP.String(), addr.Port)
-	length := make([]byte, 4)
-	binary.BigEndian.PutUint32(length, uint32(len(addrStr)))
-	return append(length, []byte(addrStr)...)
-}
-
-func init() {
+func init() { //iniziaizzazione del logger
 	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 }
-func GetLocalIP() net.IP {
+func GetLocalIP() net.IP { //ottenimento dell'indirizzo ip
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		log.Fatal(err)
@@ -310,16 +212,7 @@ func GetLocalIP() net.IP {
 	return localAddress.IP
 }
 
-func containsDangerousCharacters(s string) bool {
-	dangerousCharacters := []string{"'", ";", `"`, `\`, `%`, "&", "<", ">", "(", ")", "[", "]", "{", "}", "|", "*", "?", ":", "+", "-", "="}
-	for _, c := range dangerousCharacters {
-		if strings.Contains(s, c) {
-			return true
-		}
-	}
-	return false
-}
-
+// funzione di handle delle goroutine di login
 func handleLogin(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -357,7 +250,6 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	// Execute the query
 	rows, err := stmt.Query(user.Username, user.Password)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -366,7 +258,6 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	// Process query results
 	if rows.Next() {
 		// Handle each row here
 		randomSequence := generateRandomSequence(4)
@@ -411,6 +302,8 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 }
 
+//funzione di handle delle goroutine di Signin
+
 func handleSignin(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -453,7 +346,6 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	// Execute the query
 	rows, err := stmt.Query(user.Username)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -463,7 +355,6 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	fmt.Println("query")
 
-	// Process query results
 	if !rows.Next() {
 		randomSequence := generateRandomSequence(4)
 
@@ -501,19 +392,9 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 
 }
-func updateSendedRequests(tempmap map[string]connectHandler) {
-	sendedRequestsMutex.Lock()
-	fmt.Println("updateSendedRequests")
-	fmt.Println(sendedRequests)
-	fmt.Println(tempmap)
-	if sendedRequests == nil {
-		sendedRequests = make(map[string]connectHandler) // Reinitialize the map
-	}
-	for key, value := range tempmap {
-		sendedRequests[key] = value
-	}
-	sendedRequestsMutex.Unlock()
-}
+
+//handler della goroutine di gestione degli heathbit http
+
 func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -521,7 +402,6 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Close the request body
 	defer r.Body.Close()
 
 	var user User
@@ -532,7 +412,7 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 	}
 	// fmt.Println(user)
 	if containsDangerousCharacters(user.Username + user.Code) {
-		response := map[string]string{"error": "not allowed character"}
+		response := map[string]string{"/error": "not allowed character"}
 		jsonResponse, err := json.Marshal(response)
 		if err != nil {
 			http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
@@ -553,7 +433,6 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	// Execute the query
 	rows, err := stmt.Query(user.Username, user.Code)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -562,7 +441,7 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 	// fmt.Println("query")
-	// Process query results
+
 	if rows.Next() {
 		waitingRequestsMutex.Lock()
 		// fmt.Println("waitingRequestsMutex.Lock()")
@@ -619,7 +498,7 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
-	response := map[string]string{"error": "bad code"}
+	response := map[string]string{"/error": "bad code"}
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
@@ -630,6 +509,8 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write(jsonResponse)
 }
+
+// handler http della funzione di request
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -637,7 +518,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Close the request body
 	defer r.Body.Close()
 
 	var request Request
@@ -648,7 +528,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(request)
 	if containsDangerousCharacters(request.Username+request.Code+request.Peer_code+request.Peer_username) || request.Operation < 0 || request.Operation > 4 || request.Operation == 2 {
-		response := map[string]string{"error": "not allowed character or operation"}
+		response := map[string]string{"/error": "not allowed character or operation"}
 		jsonResponse, err := json.Marshal(response)
 		if err != nil {
 			http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
@@ -670,7 +550,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	// Execute the query
 	rows, err := stmt.Query(request.Username, request.Code)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -685,7 +564,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	defer stmt.Close()
 
-	// Execute the query
 	rows1, err := stmt.Query(request.Peer_username, request.Peer_code)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -695,7 +573,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	defer rows1.Close()
 	fmt.Println("Database")
 
-	// Process query results
 	if rows.Next() && rows1.Next() {
 		holeMutex.Lock()
 		fmt.Println("holeMutex")
@@ -703,7 +580,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		if request.Operation == 4 {
 			_, ok := holeData[request.Username+request.Code]
 			if ok {
-				response := map[string]string{"error": "server already full of requests"}
+				response := map[string]string{"/error": "server already full of requests"}
 				jsonResponse, err := json.Marshal(response)
 				if err != nil {
 					http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
@@ -743,18 +620,14 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		waitingRequestsMutex.Unlock()
 		fmt.Println(waitingRequests)
 
-		// Write the status header to indicate a successful response
 		fmt.Printf("lissening")
 		select {
 		case <-done:
-			// 	// Response writing completed
-			// case <-time.After(10 * time.Second):
-			// 	// Timeout occurred after 10 seconds
-			// 	fmt.Println("Handler timeout occurred")
+
 		}
 		return
 	}
-	response := map[string]string{"error": "bad access data"}
+	response := map[string]string{"/error": "bad access data"}
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
@@ -765,6 +638,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
+// funzione di handle per la richiesta http /response (implementa lo scambio di dati tra le due connessioni)
 func handleResponse(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -773,12 +647,9 @@ func handleResponse(w http.ResponseWriter, r *http.Request) {
 	}
 	path := r.URL.Path
 
-	// Split the path into segments
 	segments := strings.Split(path, "/")
 
-	// Get the last segment
 	lastSegment := segments[len(segments)-1]
-	// Close the request body
 	defer r.Body.Close()
 	sendedRequestsMutex.Lock()
 	w1, ok := sendedRequests[lastSegment]
@@ -788,7 +659,6 @@ func handleResponse(w http.ResponseWriter, r *http.Request) {
 	if ok {
 		w1.channel.WriteHeader(http.StatusOK)
 		w1.channel.Write(body)
-		//fmt.Println(body)
 		close(w1.closer)
 		delete(sendedRequests, lastSegment)
 		sendedRequestsMutex.Unlock()
@@ -796,7 +666,7 @@ func handleResponse(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(sendedRequests)
 		return
 	} else {
-		response := map[string]string{"error": "no sequest sended"}
+		response := map[string]string{"/error": "no sequest sended"}
 		jsonResponse, err := json.Marshal(response)
 		if err != nil {
 			http.Error(w, "Failed to create JSON response", http.StatusInternalServerError)
@@ -820,39 +690,7 @@ func handleResponse(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func generateRandomSequence(sequenceLength int) []int {
-	//rand.Seed(time.Now().UnixNano())
-	randomSequence := make([]int, sequenceLength)
-	for i := 0; i < sequenceLength; i++ {
-		randomSequence[i] = rand.Intn(58) // Genera numeri casuali tra 0 e 58 in quanto le lettere 58
-		//tra maiuscole e minuscole sono codificate in 57 numeri
-		//ci sono sei caratteri non lettere cioè ' [ ] _ \ ^ bisogna trovare un modo per toglierli ? o vanno bene ?
-		// sono i caratteri che vanno da 91 a 96
-		randomSequence[i] = checkNumber(randomSequence[i])
-	}
-	return randomSequence
-}
-
-func checkNumber(number int) int {
-	if number >= 26 && number <= 31 {
-		number = rand.Intn(58)
-		number = checkNumber(number)
-	}
-	return number
-}
-
-func encodeSequence(sequence []int) string {
-	// Codifica la sequenza in caratteri ASCII
-	encoded := ""
-	for _, num := range sequence {
-		// Aggiungi il carattere corrispondente al numero (ASCII) 65
-		char := rune(num + 65) // 'A' per num=0, 'B' per num=1
-		//visto che num ha un valore tra 0 e 57 aggiungendo 65
-		//si entrerà nel range in cui sono codificate lettere maiscole e minuscole
-		encoded += string(char)
-	}
-	return encoded
-}
+// funzione main che crea i varie handler e goroutine di servizio
 func main() {
 	ipAddress := GetLocalIP()
 	fmt.Println(ipAddress)
@@ -874,6 +712,6 @@ func main() {
 	http.HandleFunc("/hearthBit", handleHearthBit)
 	http.HandleFunc("/request", handleRequest)
 	http.HandleFunc("/response/", handleResponse)
-	fmt.Println("Server in ascolto su http://localhost:80")
+	fmt.Println("Server in ascolto su " + ipAddress.String())
 	http.ListenAndServe(":80", nil)
 }
