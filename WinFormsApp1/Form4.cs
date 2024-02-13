@@ -13,7 +13,7 @@ namespace WinFormsApp1
 
         List<Form4> listaForm = new List<Form4>();
         bool primo;
-        string serverURL = "http://localhost:81";
+        string serverURL = "http://127.0.0.1:80";
 
         private Form4 parent;
 
@@ -197,11 +197,13 @@ namespace WinFormsApp1
                     string result = response.Content.ReadAsStringAsync().Result;
                     // MessageBox.Show(result);
                     dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";
-
-
+                  
 
                     List<string> lista1 = obj.ToObject<List<string>>();
-
+                    if(lista1[0].Equals("/error")){
+                            MessageBox.Show("errore generico"+obj.error);
+                    }
+                    else{
                     Form4 form4 = new Form4(utente, codice, codice_peer, utente_peer, lista1, false, this);
 
 
@@ -216,6 +218,7 @@ namespace WinFormsApp1
                     //questa nuova lista di stringhe, il vecchio verebbe reso invisbile e reso dinuovo 
                     //visbile solo dopo la chiusura dell'altro
                     //inoltre aggiunto un booleano nel costruttore per il pulante idetro e  il riferimetno al form4 che sta generando un ulteriore form4
+                }
                 }
                 else
                 {

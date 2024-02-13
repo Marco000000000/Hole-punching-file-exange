@@ -49,21 +49,21 @@ type ForResponseData struct {
 }
 
 // struttura per la ricezione del messaggio di hearthbit
-type hearthBitMessage struct {
+type HearthBitMessage struct {
 	Code      string `json:"code"`
 	Operation int    `json:"operation"`
 	Path      string `json:"path"`
 }
 
 // struttura finale contenente solo il canale http ed il canae di stato di risposta
-type connectHandler struct {
+type ConnectHandler struct {
 	channel http.ResponseWriter
 	closer  chan struct{}
 	timer   time.Time
 }
 
 // struttura per la gestione dei permessi usati per l'hole punch
-type timeAndString struct {
+type TimeAndString struct {
 	text  string
 	timer time.Time
 }

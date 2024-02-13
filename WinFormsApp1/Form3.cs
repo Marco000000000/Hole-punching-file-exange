@@ -9,7 +9,7 @@ namespace WinFormsApp1
         Process process;
         string id_random;
         string username;
-        string serverURL = "http://127.0.0.1:81";
+        string serverURL = "http://127.0.0.1:80";
         List<Form4> list = new List<Form4>();
 
         public Form3(string codice, string nome)
@@ -152,7 +152,7 @@ private async void InvioDati(){
                dynamic obj = JsonConvert.DeserializeObject(result)??"nullo";
                    
                     if(obj.ok !=null)
-                      MessageBox.Show(obj.ok); //vedo se i dati sono arrivati a python , mi risponde con i dati che gli sono arrivati
+                      MessageBox.Show(""+obj.ok); //vedo se i dati sono arrivati a python , mi risponde con i dati che gli sono arrivati
                       
                     //start_share risponde con ok: i path dei file
                     
@@ -182,6 +182,7 @@ private async void InvioDati(){
                 using (StreamWriter sw = File.CreateText("MyFile.txt")) { }
                 return;
             }
+            Thread.Sleep(1000);
             InvioDati(); 
         
            // ---------------
