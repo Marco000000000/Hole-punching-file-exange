@@ -149,7 +149,6 @@ namespace WinFormsApp1
                 // vedere cosa risponde  e notificare se ci sono errori
                 string result = response.Content.ReadAsStringAsync().Result;
                     // MessageBox.Show(result);
-                MessageBox.Show("errore generico"+result);
                 dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";
                   
 
