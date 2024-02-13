@@ -12,7 +12,7 @@ import (
 )
 
 // funzione ausiliaria che implementa la chiusura delle richieste pendenti e rimuove il rispettivo campo da waitingRequests
-func removeKeyFromWaitingRequests(keyToDelete string) {
+func RemoveKeyFromWaitingRequests(keyToDelete string) {
 	waitingRequestsMutex.Lock()
 	for i := 0; i < len(waitingRequests[keyToDelete].link); i++ {
 		close(waitingRequests[keyToDelete].link[i])
@@ -22,7 +22,7 @@ func removeKeyFromWaitingRequests(keyToDelete string) {
 }
 
 // funzioni ausiliarie per l'implementazione del protocollo di scambio degli indirizzi
-func keepNumbersAndDot(input string) string {
+func KeepNumbersAndDot(input string) string {
 	var result string
 
 	for _, char := range input {
@@ -33,7 +33,7 @@ func keepNumbersAndDot(input string) string {
 
 	return result
 }
-func recvMsg(conn net.Conn) []byte {
+func RecvMsg(conn net.Conn) []byte {
 	data := make([]byte, 4)
 	io.ReadFull(conn, data)
 	n := int(binary.BigEndian.Uint32(data))
@@ -57,7 +57,7 @@ func recvMsg(conn net.Conn) []byte {
 
 	return readBuff
 }
-func sendMsg(conn net.Conn, msg []byte) error {
+func SendMsg(conn net.Conn, msg []byte) error {
 	lengthBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(lengthBytes, uint32(len(msg)))
 	ms := append(lengthBytes, msg...)
@@ -68,7 +68,7 @@ func sendMsg(conn net.Conn, msg []byte) error {
 	return err
 }
 
-func msgToAddr(data []byte) (*net.TCPAddr, error) {
+func MsgToAddr(data []byte) (*net.TCPAddr, error) {
 	// Implement msgToAddr logic as needed
 	addrStr := string(data)
 	parts := strings.Split(addrStr, ":")
@@ -78,11 +78,11 @@ func msgToAddr(data []byte) (*net.TCPAddr, error) {
 	}
 
 	ip := parts[0]
-	ip = keepNumbersAndDot(ip)
+	ip = KeepNumbersAndDot(ip)
 	fmt.Println(len(ip))
 	fmt.Println(ip)
 
-	port, err := strconv.Atoi(keepNumbersAndDot(parts[1]))
+	port, err := strconv.Atoi(KeepNumbersAndDot(parts[1]))
 	fmt.Println("port=", port)
 
 	if err != nil {
@@ -93,7 +93,7 @@ func msgToAddr(data []byte) (*net.TCPAddr, error) {
 	return &net.TCPAddr{IP: net.ParseIP(ip), Port: port}, nil
 }
 
-func addrToMsg(addr *net.TCPAddr) []byte {
+func AddrToMsg(addr *net.TCPAddr) []byte {
 	// Implement addrToMsg logic as needed
 	addrStr := fmt.Sprintf("%s:%d", addr.IP.String(), addr.Port)
 	length := make([]byte, 4)
@@ -102,7 +102,7 @@ func addrToMsg(addr *net.TCPAddr) []byte {
 }
 
 // funzione che ritorna un booleano se ci sono dei caratteri non permessi
-func containsDangerousCharacters(s string) bool {
+func ContainsDangerousCharacters(s string) bool {
 	dangerousCharacters := []string{"'", ";", `"`, `\`, `%`, "&", "<", ">", "(", ")", "[", "]", "{", "}", "|", "*", "?", ":", "+", "-", "="}
 	for _, c := range dangerousCharacters {
 		if strings.Contains(s, c) {
@@ -114,13 +114,13 @@ func containsDangerousCharacters(s string) bool {
 
 //funzione ausiliaria per l'aggiornamento parallelo della struttura updateSended
 
-func updateSendedRequests(tempmap map[string]connectHandler) {
+func UpdateSendedRequests(tempmap map[string]ConnectHandler) {
 	sendedRequestsMutex.Lock()
 	fmt.Println("updateSendedRequests")
 	fmt.Println(sendedRequests)
 	fmt.Println(tempmap)
 	if sendedRequests == nil {
-		sendedRequests = make(map[string]connectHandler) // Reinitialize the map
+		sendedRequests = make(map[string]ConnectHandler) // Reinitialize the map
 	}
 	for key, value := range tempmap {
 		sendedRequests[key] = value
@@ -129,29 +129,29 @@ func updateSendedRequests(tempmap map[string]connectHandler) {
 }
 
 // funzione di generazione dei codici
-func generateRandomSequence(sequenceLength int) []int {
-	randomSequence := make([]int, sequenceLength)
-	for i := 0; i < sequenceLength; i++ {
+func GenerateRandomSequence(SequenceLength int) []int {
+	randomSequence := make([]int, SequenceLength)
+	for i := 0; i < SequenceLength; i++ {
 		randomSequence[i] = rand.Intn(58) // Genera numeri casuali tra 0 e 58 in quanto le lettere 58
 		//tra maiuscole e minuscole sono codificate in 57 numeri
 		// sono i caratteri che vanno da 91 a 96
-		randomSequence[i] = checkNumber(randomSequence[i]) //ci sono sei caratteri non lettere cioè ' [ ] _ \ ^
+		randomSequence[i] = CheckNumber(randomSequence[i]) //ci sono sei caratteri non lettere cioè ' [ ] _ \ ^
 
 	}
 	return randomSequence
 }
 
 // funzione che rimuove caratteri non desiderati
-func checkNumber(number int) int {
+func CheckNumber(number int) int {
 	if number >= 26 && number <= 31 {
 		number = rand.Intn(58)
-		number = checkNumber(number)
+		number = CheckNumber(number)
 	}
 	return number
 }
 
 // passa da interi a caratteri
-func encodeSequence(sequence []int) string {
+func EncodeSequence(sequence []int) string {
 	// Codifica la sequenza in caratteri ASCII
 	encoded := ""
 	for _, num := range sequence {

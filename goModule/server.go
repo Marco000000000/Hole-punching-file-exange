@@ -32,17 +32,17 @@ var waitingRequests map[string]ForResponseData
 var waitingRequestsMutex sync.Mutex
 
 // struttura e mutex associato per la gestione delle richieste già restituite
-var sendedRequests map[string]connectHandler
+var sendedRequests map[string]ConnectHandler
 var sendedRequestsMutex sync.Mutex
 
 // struttura e mutex associato per la gestione dei permessi usati per l'hole punch
 
-var holeData map[string]timeAndString
+var holeData map[string]TimeAndString
 var holeMutex sync.Mutex
 
 // funzione handler che implementa lo scambio degli indirizzi ip tra client se passano i controlli di sicurezza
 func HandleHoleConnect(conn net.Conn) {
-	msg := recvMsg(conn)
+	msg := RecvMsg(conn)
 	var request Request
 	err := json.Unmarshal(msg, &request)
 	if err != nil {
@@ -58,19 +58,19 @@ func HandleHoleConnect(conn net.Conn) {
 
 	log.Printf("connection address: %s", addr)
 
-	data := recvMsg(conn)
+	data := RecvMsg(conn)
 
-	privAddr, err := msgToAddr(data)
+	privAddr, err := MsgToAddr(data)
 	if err != nil {
 		log.Println("Error decoding privAddr:", err)
 		conn.Close()
 		return
 	}
 
-	sendMsg(conn, addrToMsg(addr))
-	data = recvMsg(conn)
+	SendMsg(conn, AddrToMsg(addr))
+	data = RecvMsg(conn)
 	fmt.Println("string data/", string(data), "/")
-	dataAddr, err := msgToAddr(data)
+	dataAddr, err := MsgToAddr(data)
 	if err != nil {
 		log.Println("Error decoding dataAddr:", err)
 		conn.Close()
@@ -120,17 +120,17 @@ func HandleHoleConnect(conn net.Conn) {
 
 		c1 := temp
 		c2 := connTime
-		c1msg := addrToMsg(c1.pub)
+		c1msg := AddrToMsg(c1.pub)
 		c1msg = append(c1msg, byte('|'))
-		temp1 := append(c1msg, addrToMsg(c1.priv)...)
-		c2msg := addrToMsg(c2.pub)
+		temp1 := append(c1msg, AddrToMsg(c1.priv)...)
+		c2msg := AddrToMsg(c2.pub)
 		c2msg = append(c2msg, byte('|'))
-		temp2 := append(c2msg, addrToMsg(c2.priv)...)
+		temp2 := append(c2msg, AddrToMsg(c2.priv)...)
 		log.Printf("server - send client %s info to: %s", c1.pub, temp2)
-		sendMsg(c1.conn, temp2)
+		SendMsg(c1.conn, temp2)
 		log.Printf("server - send client %s info to: %s", c2.pub, temp1)
 
-		sendMsg(c2.conn, temp1)
+		SendMsg(c2.conn, temp1)
 
 	} else {
 		clients[request.Peer_username+request.Peer_code] = temp
@@ -156,7 +156,7 @@ func garbageCollector() {
 			for forDeleteKey, requestForUser := range waitingRequests {
 				for i := 0; i < len(requestForUser.link); i++ {
 					if time.Now().Second()-requestForUser.timer[i].Second() > 10 {
-						removeKeyFromWaitingRequests(forDeleteKey)
+						RemoveKeyFromWaitingRequests(forDeleteKey)
 					}
 				}
 			}
@@ -229,7 +229,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to parse JSON", http.StatusBadRequest)
 		return
 	}
-	if containsDangerousCharacters(user.Username + user.Password) {
+	if ContainsDangerousCharacters(user.Username + user.Password) {
 		response := map[string]string{"error": "not allowed character"}
 		jsonResponse, err := json.Marshal(response)
 		if err != nil {
@@ -260,10 +260,10 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	if rows.Next() {
 		// Handle each row here
-		randomSequence := generateRandomSequence(4)
+		randomSequence := GenerateRandomSequence(4)
 
 		// Codifica la sequenza in caratteri ASCII
-		encodedSequence := encodeSequence(randomSequence)
+		encodedSequence := EncodeSequence(randomSequence)
 		stmt, err := db.Prepare("UPDATE users SET code = ? WHERE username = ?")
 		if err != nil {
 			fmt.Println("Error preparing update statement:", err)
@@ -321,7 +321,7 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(user)
 
-	if containsDangerousCharacters(user.Username + user.Password) {
+	if ContainsDangerousCharacters(user.Username + user.Password) {
 		response := map[string]string{"error": "not allowed character"}
 		jsonResponse, err := json.Marshal(response)
 		if err != nil {
@@ -356,10 +356,10 @@ func handleSignin(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("query")
 
 	if !rows.Next() {
-		randomSequence := generateRandomSequence(4)
+		randomSequence := GenerateRandomSequence(4)
 
 		// Codifica la sequenza in caratteri ASCII
-		encodedSequence := encodeSequence(randomSequence)
+		encodedSequence := EncodeSequence(randomSequence)
 		insertQuery := "INSERT INTO users (username, password, code) VALUES (?, ?, ?)"
 		_, err = db.Exec(insertQuery, user.Username, user.Password, encodedSequence)
 		if err != nil {
@@ -411,7 +411,7 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// fmt.Println(user)
-	if containsDangerousCharacters(user.Username + user.Code) {
+	if ContainsDangerousCharacters(user.Username + user.Code) {
 		response := map[string]string{"/error": "not allowed character"}
 		jsonResponse, err := json.Marshal(response)
 		if err != nil {
@@ -460,17 +460,17 @@ func handleHearthBit(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if ok {
-			tempmap := map[string]connectHandler{}
-			response := []hearthBitMessage{}
+			tempmap := map[string]ConnectHandler{}
+			response := []HearthBitMessage{}
 			for i := range value.Operations {
-				code := encodeSequence(generateRandomSequence(20))
-				response = append(response, hearthBitMessage{Code: code, Path: value.Path[i], Operation: value.Operations[i]})
-				tempmap[code] = connectHandler{channel: value.Channels[i], closer: value.link[i], timer: time.Now()}
+				code := EncodeSequence(GenerateRandomSequence(20))
+				response = append(response, HearthBitMessage{Code: code, Path: value.Path[i], Operation: value.Operations[i]})
+				tempmap[code] = ConnectHandler{channel: value.Channels[i], closer: value.link[i], timer: time.Now()}
 			}
 			// fmt.Println("create tempmap")
 
 			delete(waitingRequests, user.Username)
-			go updateSendedRequests(tempmap)
+			go UpdateSendedRequests(tempmap)
 			// fmt.Println("after updateSendedRequests")
 			jsonResponse, err := json.Marshal(response)
 			if err != nil {
@@ -527,7 +527,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println(request)
-	if containsDangerousCharacters(request.Username+request.Code+request.Peer_code+request.Peer_username) || request.Operation < 0 || request.Operation > 4 || request.Operation == 2 {
+	if ContainsDangerousCharacters(request.Username+request.Code+request.Peer_code+request.Peer_username) || request.Operation < 0 || request.Operation > 4 || request.Operation == 2 {
 		response := map[string]string{"/error": "not allowed character or operation"}
 		jsonResponse, err := json.Marshal(response)
 		if err != nil {
@@ -556,7 +556,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error executing query:", err)
 		return
 	}
-	stmt, err = db.Prepare("SELECT * FROM users WHERE username = ? and code= ?")
+	stmt, err = db.Prepare("SELECT * FROM users WHERE username = ? and code= ? and TIMESTAMPDIFF(SECOND, last_hearthbit, NOW()) < 10")
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		fmt.Println("Error preparing statement:", err)
@@ -592,7 +592,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 				w.Write(jsonResponse)
 				return
 			} else {
-				holeData[request.Peer_username+request.Peer_code] = timeAndString{text: request.Username + request.Code, timer: time.Now()}
+				holeData[request.Peer_username+request.Peer_code] = TimeAndString{text: request.Username + request.Code, timer: time.Now()}
 
 			}
 		}
@@ -697,8 +697,8 @@ func main() {
 	go garbageCollector()
 	go handlerHolePunching(ipAddress.String(), 5000)
 	waitingRequests = make(map[string]ForResponseData)
-	sendedRequests = make(map[string]connectHandler)
-	holeData = make(map[string]timeAndString)
+	sendedRequests = make(map[string]ConnectHandler)
+	holeData = make(map[string]TimeAndString)
 	var err error
 
 	db, err = sql.Open("mysql", "root:password@tcp(localhost:3306)/db_holepunch")
