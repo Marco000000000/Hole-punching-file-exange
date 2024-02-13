@@ -62,7 +62,7 @@ def recvall(sock, n):
     logging.info("62-sock.settimeout(5)")
 
     while len(data) < n:
-        logging.info("65-sock.recv(n - len(data))")
+        logging.info("65-sock.recv(%s - len(data))",str(n))
 
         packet = sock.recv(n - len(data))
         if not packet:
@@ -77,9 +77,11 @@ def recv_msg(sock):
     logging.info("71-raw_msglen = recvall(sock, 4)")
 
     raw_msglen = recvall(sock, 4)
-    logging.info("80-return None")
+    logging.info("80-if not raw_msglen")
 
     if not raw_msglen:
+        logging.info("83-return None")
+
         return None
 
     msglen = struct.unpack('>I', raw_msglen)[0]
@@ -686,9 +688,7 @@ class serverConnector:
         try:
             if self.holeCreated:
                 return "True"
-            if self.requestWithOutHole>0:
-                self.requestWithOutHole-=1
-                return ["/error"]
+           
 
         
             sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1027,8 +1027,8 @@ class clientConnector:
                 self.requestWithOutHole-=1
                 return ["/error"]
             control=self.__getPermission__(peer_username,peer_code)
-            if "error" in control or "/error" in control or control is None:
-                return ["/error"]
+            logging.info(str(control))
+            
             sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             data={

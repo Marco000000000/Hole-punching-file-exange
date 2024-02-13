@@ -86,28 +86,39 @@ func HandleHoleConnect(conn net.Conn) {
 		conn.Close()
 		return
 	}
-	fmt.Print("clients:")
+	//fmt.Print("clients:")
 
-	fmt.Println(clients)
+	//fmt.Println(clients)
 	log.Printf("server - received data: %s", data)
 
-	clientsMutex.Lock()
 	log.Printf("number of clients: %d", len(clients))
-	fmt.Println(request)
+	//fmt.Println(request)
 	var connTime *Client
 	var ok bool
+	fmt.Println("request.Peer_username ", request.Peer_username)
+	fmt.Println("request.Username ", request.Username)
 
 	if request.Peer_username != "" {
+
 		connTime, ok = clients[request.Peer_username+request.Peer_code]
+
 	} else {
-		connTime, ok = clients[request.Username+request.Code]
-
+		cont := 0
+		for !ok || cont > 3 {
+			connTime, ok = clients[request.Username+request.Code]
+			time.Sleep(1 * time.Second)
+			cont++
+			return
+		}
 	}
-
 	if ok {
+		clientsMutex.Lock()
+
+		fmt.Println("dentro ok")
 		delete(clients, request.Peer_username+request.Peer_code)
 		clientsMutex.Unlock()
 		value, ok1 := holeData[request.Username+request.Code]
+		fmt.Println("value.text ", value.text)
 
 		if ok1 || value.text == request.Peer_username+request.Peer_code {
 			holeMutex.Lock()
@@ -133,6 +144,8 @@ func HandleHoleConnect(conn net.Conn) {
 		SendMsg(c2.conn, temp1)
 
 	} else {
+		clientsMutex.Lock()
+
 		clients[request.Peer_username+request.Peer_code] = temp
 		clientsMutex.Unlock()
 	}
@@ -148,7 +161,7 @@ func garbageCollector() {
 		// fmt.Println("waitingRequests:", len(waitingRequests))
 
 		for key, value := range clients {
-			if int(time.Since(value.timer).Seconds()) > 5 {
+			if int(time.Since(value.timer).Seconds()) > 10 {
 
 				clientsMutex.Lock()
 				delete(clients, key)
