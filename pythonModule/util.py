@@ -57,7 +57,10 @@ def send_msg(sock, msg):
 def recvall(sock, n):
     # Helper function to recv n bytes or return None if EOF is hit
     data = b''
+    logging.info("60-"+str(sock))
     sock.settimeout(5)
+    logging.info("62-sock.settimeout(5)")
+
     while len(data) < n:
         packet = sock.recv(n - len(data))
         if not packet:
@@ -68,6 +71,8 @@ def recvall(sock, n):
 
 def recv_msg(sock):
     # Read message length and unpack it into an integer
+    logging.info("71-raw_msglen = recvall(sock, 4)")
+
     raw_msglen = recvall(sock, 4)
     
     if not raw_msglen:
@@ -1437,18 +1442,16 @@ class clientConnector:
     #gestisce il flusso e sceglie se passare l'operazione tramite il server o usando l'hole punch
     def handleOperation(self,peer_username,peer_code,path,operation):
         #versione con il solo server
-        return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+        #return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
         logging.info("self.holeCreated=_%s",str(self.holeCreated))
         try:
-            if self.holeCreated:
-                #print("hole")
+            
+            if self.__create_hole__(peer_username=peer_username,peer_code=peer_code)=="True":
+                logging.info("1448- hole created ")
                 return self.__newClientOperation__(operation,path)
             else:
-                if self.__create_hole__(peer_username=peer_username,peer_code=peer_code)=="True":
-                    return self.__newClientOperation__(operation,path)
-                else:
-                    logging.info("handle %s",str(operation))
-                    return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+                logging.info("handle %s",str(operation))
+                return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
         except:
             logging.info("handle %s after exception",str(operation))
 
