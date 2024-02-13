@@ -62,8 +62,11 @@ def recvall(sock, n):
     logging.info("62-sock.settimeout(5)")
 
     while len(data) < n:
+        logging.info("65-sock.recv(n - len(data))")
+
         packet = sock.recv(n - len(data))
         if not packet:
+            logging.info("69-return None")
             return None
         data += packet
     return data
@@ -74,7 +77,8 @@ def recv_msg(sock):
     logging.info("71-raw_msglen = recvall(sock, 4)")
 
     raw_msglen = recvall(sock, 4)
-    
+    logging.info("80-return None")
+
     if not raw_msglen:
         return None
 
