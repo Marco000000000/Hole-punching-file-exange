@@ -150,9 +150,13 @@ private async void InvioDati(){
               
                dynamic obj = JsonConvert.DeserializeObject(result)??"nullo";
                    
-                    if(obj.ok !=null)
-                      MessageBox.Show(""+obj.ok); //vedo se i dati sono arrivati a python , mi risponde con i dati che gli sono arrivati
-                      
+                    if(obj.ok !=null){
+                      //MessageBox.Show(""+obj.ok); //vedo se i dati sono arrivati a python , mi risponde con i dati che gli sono arrivati
+                      MessageBox.Show("invio riuscito");
+                      return;
+                    }
+                
+                    MessageBox.Show("problema nella richiesta start_share ");  
                     //start_share risponde con ok: i path dei file
                     
                    
@@ -181,7 +185,7 @@ private async void InvioDati(){
                 using (StreamWriter sw = File.CreateText("MyFile.txt")) { }
                 return;
             }
-            Thread.Sleep(1000); // dare un po di tempo per fare avviare python
+            Thread.Sleep(1500); // dare un po di tempo per fare avviare python
             InvioDati();  //richiesta start share per inviare i path condivisi.
         
            // ---------------

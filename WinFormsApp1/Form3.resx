@@ -1686,7 +1686,7 @@
     <value>13</value>
   </data>
   <data name="lblUserRicevitore.Text" xml:space="preserve">
-    <value>iinserire username</value>
+    <value>Inserire username</value>
   </data>
   <data name="&gt;&gt;lblUserRicevitore.Name" xml:space="preserve">
     <value>lblUserRicevitore</value>
