@@ -149,7 +149,7 @@ namespace WinFormsApp1
                     var  response = await client.PostAsync(serverURL, content);
                     // vedere cosa risponde  e notificare se ci sono errori
                     string result = response.Content.ReadAsStringAsync().Result;
-                        // MessageBox.Show(result);
+                         MessageBox.Show(result);
                     dynamic obj = JsonConvert.DeserializeObject(result) ?? "nullo";
                     
 
@@ -158,7 +158,7 @@ namespace WinFormsApp1
                         MessageBox.Show("errore generico"+lista1[0]);
                         return;
                     }
-                    
+                    else
                     MessageBox.Show("Download eseguito con successo.");
 
 

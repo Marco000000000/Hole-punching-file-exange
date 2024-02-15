@@ -46,7 +46,7 @@
             btnClickThis.Name = "btnClickThis";
             btnClickThis.Size = new Size(149, 50);
             btnClickThis.TabIndex = 0;
-            btnClickThis.Text = "Ok";
+            btnClickThis.Text = "ACCEDI";
             btnClickThis.UseVisualStyleBackColor = false;
             btnClickThis.Click += onClickLogin;
             // 
@@ -98,7 +98,7 @@
             label3.Name = "label3";
             label3.Size = new Size(60, 20);
             label3.TabIndex = 6;
-            label3.Text = "ACCEDI";
+            label3.Text = "Login";
             // 
             // label4
             // 

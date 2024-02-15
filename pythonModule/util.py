@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 DOWNLOADDIRECTORY=os.getenv("downloadDirectory","../downloadDirectory")
 TURNSERVER=os.getenv("turnServer","192.168.1.64") #server di gestione delle richieste di controllo e scambio messaggi tramite server
+#TURNSERVER=os.getenv("turnServer","localhost") #decomentare qui per provare in locale 
 #funzione ausiliare per vedere se si sta richiedendo un path valido
 def stringInsideAList(path,paths):
     for temp in paths:
@@ -1424,7 +1425,7 @@ class clientConnector:
                         print("dentro cose che non dovrebbe")
                         print(dataTemp)
                         self.__turnSincronizeDirectory__(dataTemp,subPath)
-                return "True"
+                return ["True"]
             except:
                 return ["/error"]
     #creazione della struttura dati da mandare al server go dalla richiesta ricevuta sul server locale flask
@@ -1450,7 +1451,7 @@ class clientConnector:
     #gestisce il flusso e sceglie se passare l'operazione tramite il server o usando l'hole punch
     def handleOperation(self,peer_username,peer_code,path,operation):
         #versione con il solo server
-        #return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
+        # return self.turnOperation(self.user,self.code,peer_username,peer_code,operation,path)
         logging.info("self.holeCreated=_%s",str(self.holeCreated))
         try:
             

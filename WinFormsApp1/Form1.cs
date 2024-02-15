@@ -79,6 +79,7 @@ namespace WinFormsApp1
 
         private void OnClickRegister(object sender, EventArgs e)
         {
+            lblError.Text = string.Empty;
             Form2 form2 = new Form2();
             form2.ShowDialog();
 
