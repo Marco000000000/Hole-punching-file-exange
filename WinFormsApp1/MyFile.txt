@@ -1,6 +1,1 @@
-C:\Users\giuse\OneDrive\Documenti\cose\1.pdf
-D:\uni\iot
-C:\Users\giuse\OneDrive\Documenti\GitHub\Hole-punching-file-exange\pythonModule\downloadDirectory\Slide_CD_2021_2022\CD_Lezione9_Il_PCM.pdf
-C:\Users\giuse\OneDrive\Immagini\oregairu.png
-C:\Users\giuse\OneDrive\Documenti\tds.docx
-D:\uni\iot\Blockchain 2021 novembre-20231212T155936Z-001\Blockchain 2021 novembre\1Blockchain.mp4
+
