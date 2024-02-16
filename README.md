@@ -8,6 +8,10 @@ Scaricabile su [Docker Desktop](https://www.docker.com/products/docker-desktop) 
    ```bash
    go build
    ```
+in seguito lanciare il seguente comando:
+   ```bash
+   ./server
+   ```
 
 3.Aprire il file .env del modulo Python e modificare il campo TURNSERVER con l'ip pubblico o il dns del server precedente.
 
