@@ -55,7 +55,7 @@ def handleMessage():
     elif query_type=="start_share":
         if serverconnector is None:
             serverconnector=serverConnector(user,code)
-            serverconnector.__startServer__()
+            serverconnector.startServer()
         tempPaths=[]
         for tempPath in path:
             tempPaths.append(tempPath)

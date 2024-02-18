@@ -13,7 +13,7 @@ in seguito lanciare il seguente comando:
    ./server
    ```
 
-3.Aprire il file .env del modulo Python e modificare il campo TURNSERVER con l'ip pubblico o il dns del server precedente.
+3.Aprire il file .env del modulo Python e modificare il campo TURNSERVER con l'ip pubblico o il dns del server precedente, fare lo stesso nel modulo C# nei file Form1.cs e Form2.cs con il campo serverURL.
 
 4.Entrare nella cartella Windowsform1 tramite shell e lanciare il comando:
 
